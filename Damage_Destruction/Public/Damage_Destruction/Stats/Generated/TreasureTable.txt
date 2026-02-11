@@ -1,0 +1,84 @@
+new treasuretable "CRE_Expeditioner_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_OBJ_Backpack_CampSupplies",1,0,0,0,0,0,0,0
+
+new treasuretable "DEN_Volo_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "GOB_ZhentQuarters"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",3,0,0,0,0,0,0,0
+
+new treasuretable "UND_SocietyOfBrilliance_Hobgoblin"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "UND_SocietyOfBrilliance_Mindflayer"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "CRE_GithQuartermistress_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",3,0,0,0,0,0,0,0
+
+new treasuretable "HAV_HarperQuarterMaster_Magic_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",2,0,0,0,0,0,0,0
+
+new treasuretable "HAV_Thiefling_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "MOO_InfernalTrader_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "MOO_ZhentQuartermaster"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",3,0,0,0,0,0,0,0
+
+new treasuretable "SHA_MerregonTrader"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "WYR_Circus_KoboldMerchant_Magic"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+new treasuretable "LOW_SorcerousSundries_Trade_Magic"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",5,0,0,0,0,0,0,0
+
+new treasuretable "LOW_DevilsFee_Diabolist_Trade_Magic"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",5,0,0,0,0,0,0,0
+
+new treasuretable "HAV_HarperQuarterMaster_Weapons_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
+
+
+
+
+
+
+
+

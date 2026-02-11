@@ -1,0 +1,221 @@
+{
+  "SchemaVersion": 1,
+  "ModName": "Damage Destruction",
+  "Tabs": [
+    {
+      "TabId": "general",
+      "TabName": "General",
+      "Sections": [
+        {
+          "SectionId": "core_settings",
+          "SectionName": "Core Settings",
+          "Settings": [
+            {
+              "Id": "enabled",
+              "Name": "Enable item destruction",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If disabled, this mod will not destroy any items on death."
+            },
+            {
+              "Id": "affect_scope",
+              "Name": "Affect who?",
+              "Type": "enum",
+              "Default": "party",
+              "Description": "Choose whether item destruction applies only to the player party or to every character.",
+              "Options": {
+                "Choices": [
+                  "party",
+                  "all"
+                ]
+              }
+            },
+            {
+              "Id": "overkill_threshold",
+              "Name": "Overkill step (extra damage per tier)",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP required for one destruction tier (Bludgeoning / Force / Thunder)."
+            },
+            {
+              "Id": "conditional_requires_overkill",
+              "Name": "Require overkill for Bludgeoning/Force/Thunder",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, Bludgeoning/Force/Thunder only destroy items when extra damage beyond remaining HP meets the overkill step. If disabled, they can destroy items on kill even with 0 overkill."
+            },
+            {
+              "Id": "stacking_enabled",
+              "Name": "Stack per extra overkill step",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, additional extra damage beyond the first overkill step destroys additional random items."
+            },
+            {
+              "Id": "ignore_legendaries",
+              "Name": "Legendaries are immune",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, Legendary items are never destroyed."
+            },
+            {
+              "Id": "ignore_adamantine",
+              "Name": "Adamantine items are immune",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, Adamantine items are never destroyed."
+            }
+          ]
+        },
+        {
+          "SectionId": "damage_rules",
+          "SectionName": "Damage type rules",
+          "Settings": [
+            {
+              "Id": "acid_rule",
+              "Name": "Acid",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Acid damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "fire_rule",
+              "Name": "Fire",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Fire damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "cold_rule",
+              "Name": "Cold",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Cold damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "lightning_rule",
+              "Name": "Lightning",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Lightning damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "radiant_rule",
+              "Name": "Radiant",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Radiant damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "necrotic_rule",
+              "Name": "Necrotic",
+              "Type": "enum",
+              "Default": "all",
+              "Description": "What happens if a character is killed by Necrotic damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "bludgeoning_rule",
+              "Name": "Bludgeoning",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Bludgeoning damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "force_rule",
+              "Name": "Force",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Force damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "thunder_rule",
+              "Name": "Thunder",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Thunder damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "SectionId": "custom_immunity",
+          "SectionName": "Custom item immunities",
+          "Settings": [
+            {
+              "Id": "immune_stat_list",
+              "Name": "Immune item StatNames (text)",
+              "Type": "text",
+              "Default": "",
+              "Description": "Enter item StatNames immune to destruction, separated by spaces or commas.",
+              "Options": {
+                "Multiline": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

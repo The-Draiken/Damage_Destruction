@@ -1,0 +1,7 @@
+{
+  "RequiredVersion": 22,
+  "ModTable": "Damage_Destruction",
+  "FeatureFlags": [
+    "Lua"
+  ]
+}

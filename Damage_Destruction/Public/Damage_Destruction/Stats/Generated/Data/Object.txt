@@ -1,0 +1,8 @@
+new entry "OBJ_Scroll_Revivify_TrueResurrection"
+type "Object"
+using "OBJ_Scroll_Revivify"
+data "RootTemplate" "01d1b2b2-9e6b-4ad2-8d63-59f9caf1d389"
+data "ValueScale" "3"
+data "Rarity" "Rare"
+data "ValueOverride" "4500"
+

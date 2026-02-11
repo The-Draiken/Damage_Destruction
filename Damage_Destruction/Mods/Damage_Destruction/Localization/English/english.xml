@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<contentList xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <content contentuid="h1632e122gf0ebg18c4gf94cg3390c332d819" version="1">Revivify</content>
+  <content contentuid="ha838f2f8gf997g9b20g155agb2cc862d95a1" version="1">Revive an Entity. They return to life with 1 hit point.</content>
+  <content contentuid="hcaf4ee1fg6111gbccbgaa3bg2578b2dd2741" version="1">True Resurrection</content>
+  <content contentuid="h0a5efa2dg8c9cg5be2g23a2g27eb3b880791" version="1">Resurrect an Entity. They return to life with all of their &lt;LSTag Tooltip="HitPoints"&gt;hit points&lt;/LSTag&gt;.</content>
+  <content contentuid="hd3c2d125g19f7gcabbgc494g110d966d122d" version="1">Resurrection</content>
+  <content contentuid="hc8e52531gc850gc757gdceeg2ca521b916cf" version="1">PermaDeath</content>
+  <content contentuid="h1e76b355g63d7g4413g927fg21cce0ec35d0" version="1">The Body is too Decayed for Raise Dead LVL 5 to Revive the Entity.</content>
+  <content contentuid="hd46a3b94g3d96g3f13gb6a8g235ceb33e219" version="1">The Body is too Decayed for Raise Dead LVL 6 or lower to Revive the Entity.</content>
+  <content contentuid="h34ed2404g9306g7891g235dg8b1d83b35ee8" version="1">The Body is too Decayed for Raise Dead LVL 7 or lower to Revive the Entity.</content>
+  <content contentuid="h8dc09e6egeee9g0433g90b5g3b0b73663855" version="1">The Body is too Decayed for Raise Dead LVL 8 or Lower to Revive the Entity.</content>
+  <content contentuid="h061d2f6ag4db5gc422ga285gda8604eca274" version="1">The Body is too Damaged or Decayed for any Raise Dead Spell to Revive the Entity.</content>
+  <content contentuid="h96000c87geff9g9255g760agc29bc3897cdd" version="1">Drained Constitution</content>
+  <content contentuid="hee2d062dg3f84gd21cg61abg705c3e177eba" version="1">Your Life Force was used in Resurrecting an Entity.</content>
+</contentList>
