@@ -31,20 +31,6 @@
               }
             },
             {
-              "Id": "overkill_threshold",
-              "Name": "Overkill step (extra damage per tier)",
-              "Type": "int",
-              "Default": 10,
-              "Description": "Extra damage beyond remaining HP required for one destruction tier (Bludgeoning / Force / Thunder)."
-            },
-            {
-              "Id": "conditional_requires_overkill",
-              "Name": "Require overkill for Bludgeoning/Force/Thunder",
-              "Type": "checkbox",
-              "Default": true,
-              "Description": "If enabled, Bludgeoning/Force/Thunder only destroy items when extra damage beyond remaining HP meets the overkill step. If disabled, they can destroy items on kill even with 0 overkill."
-            },
-            {
               "Id": "stacking_enabled",
               "Name": "Stack per extra overkill step",
               "Type": "checkbox",
@@ -72,7 +58,7 @@
           "SectionName": "Damage type rules",
           "Settings": [
             {
-              "Id": "acid_rule",
+              "Id": "damage_mode__Acid",
               "Name": "Acid",
               "Type": "enum",
               "Default": "all",
@@ -86,7 +72,7 @@
               }
             },
             {
-              "Id": "fire_rule",
+              "Id": "damage_mode__Fire",
               "Name": "Fire",
               "Type": "enum",
               "Default": "all",
@@ -100,7 +86,7 @@
               }
             },
             {
-              "Id": "cold_rule",
+              "Id": "damage_mode__Cold",
               "Name": "Cold",
               "Type": "enum",
               "Default": "all",
@@ -114,7 +100,7 @@
               }
             },
             {
-              "Id": "lightning_rule",
+              "Id": "damage_mode__lightning",
               "Name": "Lightning",
               "Type": "enum",
               "Default": "all",
@@ -128,7 +114,7 @@
               }
             },
             {
-              "Id": "radiant_rule",
+              "Id": "damage_mode__Radiant",
               "Name": "Radiant",
               "Type": "enum",
               "Default": "all",
@@ -142,7 +128,7 @@
               }
             },
             {
-              "Id": "necrotic_rule",
+              "Id": "damage_mode__Necrotic",
               "Name": "Necrotic",
               "Type": "enum",
               "Default": "all",
@@ -156,7 +142,7 @@
               }
             },
             {
-              "Id": "bludgeoning_rule",
+              "Id": "damage_mode__Bludgeoning",
               "Name": "Bludgeoning",
               "Type": "enum",
               "Default": "random",
@@ -170,7 +156,7 @@
               }
             },
             {
-              "Id": "force_rule",
+              "Id": "damage_mode__Force",
               "Name": "Force",
               "Type": "enum",
               "Default": "random",
@@ -184,7 +170,7 @@
               }
             },
             {
-              "Id": "thunder_rule",
+              "Id": "damage_mode__Thunder",
               "Name": "Thunder",
               "Type": "enum",
               "Default": "random",
@@ -196,6 +182,195 @@
                   "none"
                 ]
               }
+            },
+            {
+              "Id": "damage_mode__Piercing",
+              "Name": "Piercing",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Piercing damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "damage_mode__Slashing",
+              "Name": "Slashing",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Slashing damage? Note: when set to 'random', only the Breast slot item will be destroyed on overkill instead of a random equipped item.",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "damage_mode__Poison",
+              "Name": "Poison",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Poison damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "damage_mode__Psychic",
+              "Name": "Psychic",
+              "Type": "enum",
+              "Default": "random",
+              "Description": "What happens if a character is killed by Psychic damage?",
+              "Options": {
+                "Choices": [
+                  "all",
+                  "random",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "damage_step__Acid",
+              "Name": "Acid overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Acid damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Fire",
+              "Name": "Fire overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Fire damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Cold",
+              "Name": "Cold overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Cold damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__lightning",
+              "Name": "Lightning overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by lightning damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Radiant",
+              "Name": "Radiant overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Radiant damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Necrotic",
+              "Name": "Necrotic overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Necrotic damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Bludgeoning",
+              "Name": "Bludgeoning overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Bludgeoning damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Force",
+              "Name": "Force overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Force damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Thunder",
+              "Name": "Thunder overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Thunder damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Piercing",
+              "Name": "Piercing overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Piercing damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Slashing",
+              "Name": "Slashing overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Slashing damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Poison",
+              "Name": "Poison overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Poison damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_step__Psychic",
+              "Name": "Psychic overkill step",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Extra damage beyond remaining HP for each item destruction tier when killed by Psychic damage. Use 0 to disable overkill tier scaling for this damage type."
+            },
+            {
+              "Id": "damage_chunking__Bludgeoning",
+              "Name": "Bludgeoning chunking / corpse explosion",
+              "Type": "checkbox",
+              "Default": false,
+              "Description": "If enabled, lethal Bludgeoning hits that meet the Bludgeoning chunking threshold remove Overkill_Exploder and trigger the corpse explosion / chunking effect."
+            },
+            {
+              "Id": "damage_chunk_threshold__Bludgeoning",
+              "Name": "Bludgeoning chunking threshold",
+              "Type": "int",
+              "Default": 30,
+              "Description": "If a lethal Bludgeoning hit deals at least this much damage, Overkill_Exploder is removed and the corpse explosion / chunking effect triggers."
+            },
+            {
+              "Id": "damage_chunking__Force",
+              "Name": "Force chunking / corpse explosion",
+              "Type": "checkbox",
+              "Default": false,
+              "Description": "If enabled, lethal Force hits that meet the Force chunking threshold remove Overkill_Exploder and trigger the corpse explosion / chunking effect."
+            },
+            {
+              "Id": "damage_chunk_threshold__Force",
+              "Name": "Force chunking threshold",
+              "Type": "int",
+              "Default": 30,
+              "Description": "If a lethal Force hit deals at least this much damage, Overkill_Exploder is removed and the corpse explosion / chunking effect triggers."
+            },
+            {
+              "Id": "damage_chunking__Thunder",
+              "Name": "Thunder chunking / corpse explosion",
+              "Type": "checkbox",
+              "Default": false,
+              "Description": "If enabled, lethal Thunder hits that meet the Thunder chunking threshold remove Overkill_Exploder and trigger the corpse explosion / chunking effect."
+            },
+            {
+              "Id": "damage_chunk_threshold__Thunder",
+              "Name": "Thunder chunking threshold",
+              "Type": "int",
+              "Default": 30,
+              "Description": "If a lethal Thunder hit deals at least this much damage, Overkill_Exploder is removed and the corpse explosion / chunking effect triggers."
             }
           ]
         },

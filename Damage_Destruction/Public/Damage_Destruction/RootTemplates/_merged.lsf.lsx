@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<save>
+	<version major="4" minor="0" revision="9" build="328" lslib_meta="v1,bswap_guids" />
+	<region id="Templates">
+		<node id="Templates">
+			<children>
+				<node id="GameObjects">
+					<attribute id="DisplayName" type="TranslatedString" handle="h4c392fbeg1dfeg451cgb0d9gd01bd7dd2d5b" version="1" />
+					<attribute id="Icon" type="FixedString" value="Item_LOOT_SCROLL_Resurrection" />
+					<attribute id="LevelName" type="FixedString" value="" />
+					<attribute id="MapKey" type="FixedString" value="7ef78dd5-feff-4a70-9af2-43d03570d291" />
+					<attribute id="Name" type="LSString" value="LOOT_SCROLL_RaiseDead" />
+					<attribute id="ParentTemplateId" type="FixedString" value="4ffd5c4b-4c56-4f05-a228-a33754bb1806" />
+					<attribute id="PhysicsTemplate" type="FixedString" value="94a7c400-b2df-c54c-1675-1937920b7714" />
+					<attribute id="ReadinessFlags" type="uint32" value="8" />
+					<attribute id="Stats" type="FixedString" value="UTAM_Scroll_OBJ_7ef78dd5-feff-4a70-9af2-43d03570d291" />
+					<attribute id="Type" type="FixedString" value="item" />
+					<attribute id="VisualTemplate" type="FixedString" value="916f78a4-779b-3e43-28eb-eefc26d9683d" />
+					<attribute id="_OriginalFileVersion_" type="int64" value="144115207403209013" />
+					<attribute id="StoryItem" type="bool" value="False" />
+					<attribute id="UTAM_h1" type="TranslatedString" handle="h4c392fbeg1dfeg451cgb0d9gd01bd7dd2d5b" version="1" />
+					<attribute id="UTAM_h2" type="TranslatedString" handle="h462edb52gdcd8g42c1g9a08g58ac30e1433e" version="1" />
+					<attribute id="UTAM_h3" type="TranslatedString" handle="h1ab3652dg6ebcg49c5ga298ge6ca9d9ce55f" version="1" />
+					<attribute id="UTAM_h4" type="TranslatedString" handle="hf8e44a89gd44bg4ebbg98c5g0bfd25960cb8" version="1" />
+					<attribute id="UTAM_Type" type="FixedString" value="16" />
+					<attribute id="UTAM_Group" type="FixedString" value="(Default)" />
+					<children>
+						<node id="OnUsePeaceActions">
+							<children>
+								<node id="Action">
+									<attribute id="ActionType" type="int32" value="12" />
+									<children>
+										<node id="Attributes">
+											<attribute id="Animation" type="FixedString" value="" />
+											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Consume" type="bool" value="True" />
+											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead" />
+										</node>
+									</children>
+								</node>
+							</children>
+						</node>
+					</children>
+				</node>
+				<node id="GameObjects">
+					<attribute id="DisplayName" type="TranslatedString" handle="h1a54aa2dg39ccg4a6fg8270gc4e894febc6b" version="1" />
+					<attribute id="Icon" type="FixedString" value="Item_LOOT_SCROLL_Resurrection" />
+					<attribute id="LevelName" type="FixedString" value="" />
+					<attribute id="MapKey" type="FixedString" value="bf0f79fc-eb04-4e4f-9f0b-842c0c676c09" />
+					<attribute id="Name" type="LSString" value="LOOT_SCROLL_RaiseDead_6" />
+					<attribute id="ParentTemplateId" type="FixedString" value="4ffd5c4b-4c56-4f05-a228-a33754bb1806" />
+					<attribute id="PhysicsTemplate" type="FixedString" value="94a7c400-b2df-c54c-1675-1937920b7714" />
+					<attribute id="ReadinessFlags" type="uint32" value="8" />
+					<attribute id="Stats" type="FixedString" value="UTAM_Scroll_OBJ_bf0f79fc-eb04-4e4f-9f0b-842c0c676c09" />
+					<attribute id="Type" type="FixedString" value="item" />
+					<attribute id="VisualTemplate" type="FixedString" value="916f78a4-779b-3e43-28eb-eefc26d9683d" />
+					<attribute id="_OriginalFileVersion_" type="int64" value="144115207403209013" />
+					<attribute id="StoryItem" type="bool" value="False" />
+					<attribute id="UTAM_h1" type="TranslatedString" handle="h1a54aa2dg39ccg4a6fg8270gc4e894febc6b" version="1" />
+					<attribute id="UTAM_h2" type="TranslatedString" handle="h620c6039gb2c8g48c4g9352gd959aca159a6" version="1" />
+					<attribute id="UTAM_h3" type="TranslatedString" handle="h79fd6619g724eg4cedgbd0bg7f923ce608c5" version="1" />
+					<attribute id="UTAM_h4" type="TranslatedString" handle="h443ed0a0gb4b3g4f5fg9100g48083c6479f3" version="1" />
+					<attribute id="UTAM_Type" type="FixedString" value="16" />
+					<attribute id="UTAM_Group" type="FixedString" value="(Default)" />
+					<children>
+						<node id="OnUsePeaceActions">
+							<children>
+								<node id="Action">
+									<attribute id="ActionType" type="int32" value="12" />
+									<children>
+										<node id="Attributes">
+											<attribute id="Animation" type="FixedString" value="" />
+											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Consume" type="bool" value="True" />
+											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_6" />
+										</node>
+									</children>
+								</node>
+							</children>
+						</node>
+					</children>
+				</node>
+				<node id="GameObjects">
+					<attribute id="DisplayName" type="TranslatedString" handle="hb3aa011fg7e25g46f5g975fg649f65497166" version="1" />
+					<attribute id="Icon" type="FixedString" value="Item_LOOT_SCROLL_Resurrection" />
+					<attribute id="LevelName" type="FixedString" value="" />
+					<attribute id="MapKey" type="FixedString" value="e59a2f43-3152-4b23-9288-b4dcb1ca8582" />
+					<attribute id="Name" type="LSString" value="LOOT_SCROLL_RaiseDead_7" />
+					<attribute id="ParentTemplateId" type="FixedString" value="4ffd5c4b-4c56-4f05-a228-a33754bb1806" />
+					<attribute id="PhysicsTemplate" type="FixedString" value="94a7c400-b2df-c54c-1675-1937920b7714" />
+					<attribute id="ReadinessFlags" type="uint32" value="8" />
+					<attribute id="Stats" type="FixedString" value="UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582" />
+					<attribute id="Type" type="FixedString" value="item" />
+					<attribute id="VisualTemplate" type="FixedString" value="916f78a4-779b-3e43-28eb-eefc26d9683d" />
+					<attribute id="_OriginalFileVersion_" type="int64" value="144115207403209013" />
+					<attribute id="StoryItem" type="bool" value="False" />
+					<attribute id="UTAM_h1" type="TranslatedString" handle="hb3aa011fg7e25g46f5g975fg649f65497166" version="1" />
+					<attribute id="UTAM_h2" type="TranslatedString" handle="h73dc9cb7ge752g4563gb229g2892fc11bdbd" version="1" />
+					<attribute id="UTAM_h3" type="TranslatedString" handle="h4db205d7g1523g42abgb148g356da1b3e4aa" version="1" />
+					<attribute id="UTAM_h4" type="TranslatedString" handle="h7a4e36dfg945ag42aag939dg35a4d659c995" version="1" />
+					<attribute id="UTAM_Type" type="FixedString" value="16" />
+					<attribute id="UTAM_Group" type="FixedString" value="(Default)" />
+					<children>
+						<node id="OnUsePeaceActions">
+							<children>
+								<node id="Action">
+									<attribute id="ActionType" type="int32" value="12" />
+									<children>
+										<node id="Attributes">
+											<attribute id="Animation" type="FixedString" value="" />
+											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Consume" type="bool" value="True" />
+											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_7" />
+										</node>
+									</children>
+								</node>
+							</children>
+						</node>
+					</children>
+				</node>
+				<node id="GameObjects">
+					<attribute id="DisplayName" type="TranslatedString" handle="h9ae196adg11cfg4f18g9616g9d196c531e69" version="1" />
+					<attribute id="Icon" type="FixedString" value="Item_LOOT_SCROLL_Resurrection" />
+					<attribute id="LevelName" type="FixedString" value="" />
+					<attribute id="MapKey" type="FixedString" value="cbe31b42-22a8-4e26-a56f-0645d081503a" />
+					<attribute id="Name" type="LSString" value="LOOT_SCROLL_RaiseDead_8" />
+					<attribute id="ParentTemplateId" type="FixedString" value="4ffd5c4b-4c56-4f05-a228-a33754bb1806" />
+					<attribute id="PhysicsTemplate" type="FixedString" value="94a7c400-b2df-c54c-1675-1937920b7714" />
+					<attribute id="ReadinessFlags" type="uint32" value="8" />
+					<attribute id="Stats" type="FixedString" value="UTAM_Scroll_OBJ_cbe31b42-22a8-4e26-a56f-0645d081503a" />
+					<attribute id="Type" type="FixedString" value="item" />
+					<attribute id="VisualTemplate" type="FixedString" value="916f78a4-779b-3e43-28eb-eefc26d9683d" />
+					<attribute id="_OriginalFileVersion_" type="int64" value="144115207403209013" />
+					<attribute id="StoryItem" type="bool" value="False" />
+					<attribute id="UTAM_h1" type="TranslatedString" handle="h9ae196adg11cfg4f18g9616g9d196c531e69" version="1" />
+					<attribute id="UTAM_h2" type="TranslatedString" handle="hc5e6e31bg2bc5g4005g8621g74aad59b052f" version="1" />
+					<attribute id="UTAM_h3" type="TranslatedString" handle="hd0f63980g59f9g4872ga8c0g43548efa8a06" version="1" />
+					<attribute id="UTAM_h4" type="TranslatedString" handle="h290a30f3gf157g4798ga3e4gaad4f34b6dc7" version="1" />
+					<attribute id="UTAM_Type" type="FixedString" value="16" />
+					<attribute id="UTAM_Group" type="FixedString" value="(Default)" />
+					<children>
+						<node id="OnUsePeaceActions">
+							<children>
+								<node id="Action">
+									<attribute id="ActionType" type="int32" value="12" />
+									<children>
+										<node id="Attributes">
+											<attribute id="Animation" type="FixedString" value="" />
+											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Consume" type="bool" value="True" />
+											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_8" />
+										</node>
+									</children>
+								</node>
+							</children>
+						</node>
+					</children>
+				</node>
+				<node id="GameObjects">
+					<attribute id="DisplayName" type="TranslatedString" handle="h60195dd0g9238g4466gb08agca013aaccdf3" version="1" />
+					<attribute id="Icon" type="FixedString" value="Item_LOOT_SCROLL_Resurrection" />
+					<attribute id="LevelName" type="FixedString" value="" />
+					<attribute id="MapKey" type="FixedString" value="0be66f48-4920-4d7e-ab1d-ce8dce417d01" />
+					<attribute id="Name" type="LSString" value="LOOT_SCROLL_TRaiseDead_9" />
+					<attribute id="ParentTemplateId" type="FixedString" value="4ffd5c4b-4c56-4f05-a228-a33754bb1806" />
+					<attribute id="PhysicsTemplate" type="FixedString" value="94a7c400-b2df-c54c-1675-1937920b7714" />
+					<attribute id="ReadinessFlags" type="uint32" value="8" />
+					<attribute id="Stats" type="FixedString" value="UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01" />
+					<attribute id="Type" type="FixedString" value="item" />
+					<attribute id="VisualTemplate" type="FixedString" value="916f78a4-779b-3e43-28eb-eefc26d9683d" />
+					<attribute id="_OriginalFileVersion_" type="int64" value="144115207403209013" />
+					<attribute id="StoryItem" type="bool" value="False" />
+					<attribute id="UTAM_h1" type="TranslatedString" handle="h60195dd0g9238g4466gb08agca013aaccdf3" version="1" />
+					<attribute id="UTAM_h2" type="TranslatedString" handle="hbe883fa9g6558g4439g82f5g84eff476e8cb" version="1" />
+					<attribute id="UTAM_h3" type="TranslatedString" handle="h4ab0e10egd8cfg4006gbb1dg70d7ee3c666c" version="1" />
+					<attribute id="UTAM_h4" type="TranslatedString" handle="hcd5e4520ge771g474fg99b2ge585feb3349c" version="1" />
+					<attribute id="UTAM_Type" type="FixedString" value="16" />
+					<attribute id="UTAM_Group" type="FixedString" value="(Default)" />
+					<children>
+						<node id="OnUsePeaceActions">
+							<children>
+								<node id="Action">
+									<attribute id="ActionType" type="int32" value="12" />
+									<children>
+										<node id="Attributes">
+											<attribute id="Animation" type="FixedString" value="" />
+											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Consume" type="bool" value="True" />
+											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_9" />
+										</node>
+									</children>
+								</node>
+							</children>
+						</node>
+					</children>
+				</node>
+			</children>
+		</node>
+	</region>
+</save>

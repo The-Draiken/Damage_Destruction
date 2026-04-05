@@ -24,7 +24,7 @@ local PENALTY_TIERS = {
 }
 
 -- Effectively permanent
-local PENALTY_DURATION = 999999
+local PENALTY_DURATION = 6
 
 -- Character var storing the current tier
 local VAR_TIER = "DD_ResPenaltyTier"

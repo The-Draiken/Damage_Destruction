@@ -104,6 +104,7 @@ end)
 -- CombatStarted: increment the active combat counter
 Ext.Osiris.RegisterListener("CombatStarted", 1, "after", function(combatguid)
     ActiveCombatCount = ActiveCombatCount + 1
+    Ext.Utils.Print(string.format("%s CombatStarted: combat=%s ActiveCombatCount=%d", MOD_PREFIX, tostring(combatguid), ActiveCombatCount))
 end)
 
 -- CombatEnded: remove the combat block from all corpses when combat ends.
@@ -183,15 +184,16 @@ Ext.Osiris.RegisterListener("Died", 1, "after", function (character)
 
     -- Check whether the character died during turn-based combat or forced turn mode.
     local inCombat = IsCharacterInCombat(character)
-    local useTurnBased = inCombat or IsForceTB
+    local useTurnBased = inCombat or IsForceTB or (ActiveCombatCount > 0)
 
     -- Always apply the passive to prevent the engine removing our custom status
     SafeAddPassive(character)
 
     local uuid = GetUUIDSafe(character)
+    Ext.Utils.Print(string.format("%s Died: inCombat=%s IsForceTB=%s ActiveCombatCount=%d useTurnBased=%s", MOD_PREFIX, tostring(inCombat), tostring(IsForceTB), ActiveCombatCount or -1, tostring(useTurnBased)))
     if useTurnBased then
         -- In turn-based contexts, apply an indefinite status and track rounds manually
-        Osi.ApplyStatus(character, DEAD_TECHNICAL, -1.0, 1)
+        Osi.ApplyStatus(character, DEAD_TECHNICAL, 60.0, 1)
         -- Also apply the combat block immediately to prevent corpses being pulled back into combat
         Osi.ApplyStatus(character, DEAD_COMBAT_BLOCK, -1.0, 1)
         -- Initialize or reset the round counter (10 rounds)
@@ -282,7 +284,8 @@ end)
 -- conversion is only performed once per corpse: if the corpse is already being tracked
 -- in PendingExpireTB, it is skipped. Outside of combat or force TB, no conversion is
 -- performed, so real-time timers continue to tick normally.
-Ext.Osiris.RegisterListener("TurnStarted", 2, "after", function (actor, isConversation)
+Ext.Osiris.RegisterListener("TurnStarted", 2, "after", function (char)
+    Ext.Utils.Print(string.format("%s TurnStarted: char=%s ActiveCombatCount=%d IsForceTB=%s", MOD_PREFIX, tostring(char), ActiveCombatCount or -1, tostring(IsForceTB)))
     -- Only perform conversions if a combat is active or force TB is engaged
     if ActiveCombatCount > 0 or IsForceTB then
         local dead = Osi.DB_Dead:Get(nil)
@@ -303,7 +306,7 @@ Ext.Osiris.RegisterListener("TurnStarted", 2, "after", function (actor, isConver
                         -- Remove the existing timed status
                         Osi.RemoveStatus(ch, DEAD_TECHNICAL)
                         -- Apply an indefinite status so it does not tick in real time
-                        Osi.ApplyStatus(ch, DEAD_TECHNICAL, -1.0, 1)
+                        Osi.ApplyStatus(ch, DEAD_TECHNICAL, 60.0, 1)
                         -- Ensure the corpse cannot rejoin combat
                         Osi.ApplyStatus(ch, DEAD_COMBAT_BLOCK, -1.0, 1)
                         -- Reapply the passive to prevent engine cleanup
@@ -329,6 +332,7 @@ Ext.Osiris.RegisterListener("Resurrected", 1, "after", function (character)
     SafeRemovePassive(character)
     -- Clear any pending turn-based tracking
     local uuid = GetUUIDSafe(character)
+    Ext.Utils.Print(string.format("%s Died: inCombat=%s IsForceTB=%s ActiveCombatCount=%d useTurnBased=%s", MOD_PREFIX, tostring(inCombat), tostring(IsForceTB), ActiveCombatCount or -1, tostring(useTurnBased)))
     if uuid then
         PendingExpireTB[uuid] = nil
     end

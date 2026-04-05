@@ -30,6 +30,17 @@ local IMMUNE_REQ = ModuleUUID .. "_ImmuneStats_Request"
 local IMMUNE_SET = ModuleUUID .. "_ImmuneStats_Set"
 local IMMUNE_UPD = ModuleUUID .. "_ImmuneStats_Update"
 
+-- Forward declarations for functions defined later in the file.  Lua
+-- requires that local functions be declared before they can be
+-- referenced by other local functions defined earlier in the chunk.
+-- Without these forward declarations, functions such as
+-- `PushClientListToServer` would reference `BuildClientList` and
+-- `SyncFromServer` before they are defined, causing them to resolve
+-- to nil.  Declaring them here ensures that the local variables
+-- exist and are assigned once the actual definitions are parsed.
+local BuildClientList
+local SyncFromServer
+
 -- client-side cache of immune StatNames
 local immuneSet = {}
 
@@ -60,11 +71,20 @@ local immuneStatsClient = immuneSet
 -- back to the server.  This just delegates to the existing
 -- `PushToServer()` function defined above.
 local function PushClientListToServer()
-    -- We don't need to rebuild the list here because `PushToServer()`
-    -- calls `BuildClientList()` when serialising `immuneSet`.  If
-    -- further logic is required it can be added here without
-    -- modifying the MCM callbacks.
-    PushToServer()
+    -- Serialize and send the current list of immune stat names to the server.
+    -- We intentionally do not update the MCM text field from the client here.
+    -- Instead, the server will persist the new list and mirror it back into
+    -- MCM via its own integration code.  Updating MCM from the client can
+    -- cause race conditions where the MCM event handler overwrites the
+    -- immune list before the server has processed the network message.
+    local okList, list = pcall(BuildClientList)
+    local payload
+    if okList and type(list) == "table" then
+        payload = Ext.Json.Stringify(list)
+    else
+        payload = "[]"
+    end
+    Ext.Net.PostMessageToServer(IMMUNE_SET, payload)
 end
 
 -- Vanilla mod IDs (Base + Gustav/Shared etc). Anything else is considered "Modded" for filtering.
@@ -114,7 +134,11 @@ end
 local function BuildClientList()
     local out = {}
     for statName, active in pairs(immuneSet) do
-        if active == true and type(statName) == "string" and statName ~= "" then
+        -- Include any entry whose key exists.  We ignore the stored value
+        -- (true/false) because presence alone indicates the user selected
+        -- the item as immune.  This mirrors Attunement’s behaviour of
+        -- mapping overrides to `false` while treating nil as absent.
+        if active ~= nil and type(statName) == "string" and statName ~= "" then
             out[#out+1] = statName
         end
     end
@@ -123,14 +147,33 @@ local function BuildClientList()
 end
 
 local function SyncFromServer(list)
-    immuneSet = {}
+    -- Instead of reassigning immuneSet to a new table (which would
+    -- break references such as immuneStatsClient), clear the existing
+    -- table and repopulate it.  This ensures that any aliases remain
+    -- valid and UI callbacks continue to mutate the correct table.
+    if type(immuneSet) ~= "table" then
+        immuneSet = {}
+    end
+    -- Remove all existing keys
+    for k in pairs(immuneSet) do
+        immuneSet[k] = nil
+    end
+    -- Populate with new entries from the server.  Each stat name in the
+    -- list marks that item as immune.  To mirror Attunement’s override
+    -- pattern, we store `false` as the value (presence is what matters).
     if type(list) == "table" then
         for _, v in ipairs(list) do
             if type(v) == "string" and v ~= "" then
-                immuneSet[v] = true
+                immuneSet[v] = false
             end
         end
     end
+    -- Do not update the MCM text field from the client.  The server
+    -- integration is responsible for synchronising the field after
+    -- persisting the updated immunity list.  Updating MCM from the
+    -- client can conflict with server-side event handling and cause
+    -- the immune list to be cleared.  See MCM_Integration.lua for
+    -- details.
 end
 
 local function PushToServer()
@@ -193,65 +236,216 @@ local function AddStatsToIndex(index, statsType)
 end
 
 local function EnsureItemIndex()
-    -- Build the index only once.  We scan all root templates for items
-    -- whose stats correspond to Armor or Weapon types.  This mirrors
-    -- Attunement's logic and avoids relying on Ext.Stats.GetStats(),
-    -- which may not return values on some builds.  Even if ItemIndex
-    -- exists, we always rebuild the lookup table below to remain
-    -- consistent.
+    -- Build the index only once.  On some Script Extender builds the
+    -- client cannot enumerate templates or stats reliably, so we
+    -- attempt multiple strategies in order: (1) use the server‑sent
+    -- index stored in Mods.Damage_Destruction.ItemIndex, enriching it
+    -- with additional metadata; (2) enumerate all root templates on
+    -- the client; (3) fall back to enumerating weapon/armour stats via
+    -- Ext.Stats.GetStats().  If all methods fail we will still
+    -- initialise ItemIndex to an empty table so the UI does not crash.
     if ItemIndex == nil then
-        ItemIndex = {}
-        -- Use the same logic as Attunement's populateTemplateTable() to
-        -- gather all item templates.  Iterate over every root template
-        -- and collect entries whose ModifierList is "Weapon" or "Armor"
-        -- and which are not underwear or vanity slots.  In addition
-        -- to the template display name, we fallback to stat name or
-        -- internal name when a display name is unavailable.
-        local ok, templates = pcall(Ext.ClientTemplate.GetAllRootTemplates)
-        if ok and type(templates) == "table" then
-            for _, rt in pairs(templates) do
-                if rt and rt.TemplateType == "item" then
-                    local statName = SafeString(rt.Stats)
-                    if statName ~= "" then
-                        local stat = Ext.Stats.Get(statName)
-                        if stat ~= nil then
-                            local modifierList = SafeString(StatField(stat, "ModifierList"))
-                            if modifierList == "Weapon" or modifierList == "Armor" then
-                                local slot = SafeString(StatField(stat, "Slot"))
-                                if slot ~= "Underwear" and not string.find(slot, "Vanity") then
-                                    -- Determine display name:
-                                    -- Use the template DisplayName handle if possible, otherwise
-                                    -- fallback to the stat DisplayName or Name, and finally the
-                                    -- statName itself.
-                                    local disp = ""
-                                    -- Some builds use nested DisplayName.Handle handles.
-                                    disp = TemplateDisplayName(rt)
-                                    if disp == "" then
-                                        -- Use stat DisplayName if available.
-                                        local sd = StatField(stat, "DisplayName")
-                                        if sd and type(sd) == "string" and sd ~= "" then
-                                            disp = sd
-                                        else
-                                            -- Fall back to stat name
-                                            disp = SafeString(StatField(stat, "Name") or statName)
+        -- Attempt to consume the server-provided index.  This is sent
+        -- via ItemIndex_Server.lua and stored on the Mods namespace.
+        local served = nil
+        if Mods and Mods.Damage_Destruction and Mods.Damage_Destruction.ItemIndex then
+            served = Mods.Damage_Destruction.ItemIndex
+        end
+        if served and type(served) == "table" and #served > 0 then
+            ItemIndex = {}
+            -- Enrich each entry from the server index with
+            -- additional information pulled from the stats and templates.
+            for _, baseEntry in ipairs(served) do
+                local statName = baseEntry.StatName or ""
+                if statName ~= "" then
+                    local stat = Ext.Stats.Get(statName)
+                    -- Determine display name (prefer server value)
+                    local disp = baseEntry.DisplayName or ""
+                    -- Determine icon (prefer server value)
+                    local icon = baseEntry.Icon or "Item_Unknown"
+                    -- Determine source (vanilla/mod) from server value
+                    local source = baseEntry.Source or "vanilla"
+                    -- Extract additional metadata from stat and root template
+                    local rarity, slot, passives, statusEquip, boosts = "", "", "", "", ""
+                    local modId = ""
+                    local modName, modAuthor = "", ""
+                    if stat then
+                        rarity      = SafeString(StatField(stat, "Rarity"))
+                        slot        = SafeString(StatField(stat, "Slot"))
+                        passives    = SafeString(StatField(stat, "PassivesOnEquip"))
+                        statusEquip = SafeString(StatField(stat, "StatusOnEquip"))
+                        boosts      = SafeString(StatField(stat, "Boosts") or StatField(stat, "DefaultBoosts"))
+                        modId       = SafeString(StatField(stat, "ModId"))
+                    end
+                    -- Derive human‑readable mod info
+                    if modId ~= "" then
+                        local okMod, modInfo = pcall(Ext.Mod.GetMod, modId)
+                        if okMod and modInfo and modInfo.Info then
+                            modName   = SafeString(modInfo.Info.Name)
+                            modAuthor = SafeString(modInfo.Info.Author)
+                        end
+                    end
+                    -- If display name is still empty, attempt to pull
+                    -- from stat or fallback to statName
+                    if disp == "" then
+                        if stat then
+                            local sd = StatField(stat, "DisplayName")
+                            if sd and type(sd) == "string" and sd ~= "" then
+                                disp = sd
+                            else
+                                local sname = StatField(stat, "Name")
+                                if sname and type(sname) == "string" and sname ~= "" then
+                                    disp = sname
+                                else
+                                    disp = statName
+                                end
+                            end
+                        else
+                            disp = statName
+                        end
+                    end
+                    -- Attempt to get template icon if server icon is
+                    -- unknown.  This may fail quietly.
+                    if icon == "Item_Unknown" then
+                        local rtGuid = stat and StatField(stat, "RootTemplate") or nil
+                        if rtGuid and rtGuid ~= "" and rtGuid ~= "00000000-0000-0000-0000-000000000000" then
+                            local okRt, rt = pcall(Ext.Template.GetRootTemplate, rtGuid)
+                            if okRt and rt then
+                                if rt.Icon and type(rt.Icon) == "string" and rt.Icon ~= "" then
+                                    icon = rt.Icon
+                                end
+                                -- Also try to pull a translation for display name
+                                local d = TemplateDisplayName(rt)
+                                if d and d ~= "" then
+                                    disp = d
+                                end
+                            end
+                        end
+                    end
+                    -- Filter out underwear and vanity items; rely on slot
+                    if slot ~= "Underwear" and (slot == "" or not string.find(slot, "Vanity")) then
+                        ItemIndex[#ItemIndex+1] = {
+                            StatName        = statName,
+                            DisplayName     = disp,
+                            Icon            = icon,
+                            Source          = source,
+                            Rarity          = rarity,
+                            Slot            = slot,
+                            PassivesOnEquip = passives,
+                            StatusOnEquip   = statusEquip,
+                            Boosts          = boosts,
+                            ModId           = modId,
+                            ModName         = modName,
+                            ModAuthor       = modAuthor,
+                        }
+                    end
+                end
+            end
+        else
+            -- If no server index is available, attempt to enumerate
+            -- templates on the client as before.  This logic mirrors
+            -- Attunement and may fail on some builds but is a useful
+            -- fallback when the server hasn't sent the index yet.
+            ItemIndex = {}
+            local ok, templates = pcall(Ext.ClientTemplate.GetAllRootTemplates)
+            if ok and type(templates) == "table" then
+                for _, rt in pairs(templates) do
+                    if rt and rt.TemplateType == "item" then
+                        local statName = SafeString(rt.Stats)
+                        if statName ~= "" then
+                            local stat = Ext.Stats.Get(statName)
+                            if stat ~= nil then
+                                local modifierList = SafeString(StatField(stat, "ModifierList"))
+                                if modifierList == "Weapon" or modifierList == "Armor" then
+                                    local slot = SafeString(StatField(stat, "Slot"))
+                                    if slot ~= "Underwear" and not string.find(slot, "Vanity") then
+                                        local disp = TemplateDisplayName(rt)
+                                        if disp == "" then
+                                            local sd = StatField(stat, "DisplayName")
+                                            if sd and type(sd) == "string" and sd ~= "" then
+                                                disp = sd
+                                            else
+                                                disp = SafeString(StatField(stat, "Name") or statName)
+                                            end
                                         end
+                                        if disp == "" then disp = statName end
+                                        local icon = SafeString(rt.Icon or "Item_Unknown")
+                                        local modId = SafeString(StatField(stat, "ModId"))
+                                        local source = IsVanillaModId(modId) and "vanilla" or "mod"
+                                        local rarity      = SafeString(StatField(stat, "Rarity"))
+                                        local passives    = SafeString(StatField(stat, "PassivesOnEquip"))
+                                        local statusEquip = SafeString(StatField(stat, "StatusOnEquip"))
+                                        local boosts      = SafeString(StatField(stat, "Boosts") or StatField(stat, "DefaultBoosts"))
+                                        local modName, modAuthor = "", ""
+                                        if modId ~= "" then
+                                            local ok2, modInfo = pcall(Ext.Mod.GetMod, modId)
+                                            if ok2 and modInfo and modInfo.Info then
+                                                modName   = SafeString(modInfo.Info.Name)
+                                                modAuthor = SafeString(modInfo.Info.Author)
+                                            end
+                                        end
+                                        ItemIndex[#ItemIndex+1] = {
+                                            StatName        = statName,
+                                            DisplayName     = disp,
+                                            Icon            = icon,
+                                            Source          = source,
+                                            Rarity          = rarity,
+                                            Slot            = slot,
+                                            PassivesOnEquip = passives,
+                                            StatusOnEquip   = statusEquip,
+                                            Boosts          = boosts,
+                                            ModId           = modId,
+                                            ModName         = modName,
+                                            ModAuthor       = modAuthor,
+                                        }
                                     end
-                                    -- Ensure we have some display string
+                                end
+                            end
+                        end
+                    end
+                end
+            else
+                -- As a last resort, fall back to enumerating stats via
+                -- Ext.Stats.GetStats() on the client.  This may
+                -- return nil on some builds, but we attempt both
+                -- Armour and Weapon types in case one succeeds.  We
+                -- gather only basic fields (display name, icon, source)
+                -- when template access fails.
+                ItemIndex = {}
+                local function AddStatsByType(statsType)
+                    local stats = Ext.Stats.GetStats(statsType) or {}
+                    for _, statName in ipairs(stats) do
+                        local stat = Ext.Stats.Get(statName)
+                        if stat then
+                            local slot = SafeString(StatField(stat, "Slot"))
+                            if slot ~= "Underwear" and not string.find(slot, "Vanity") then
+                                local modifierList = SafeString(StatField(stat, "ModifierList"))
+                                if modifierList == "Weapon" or modifierList == "Armor" then
+                                    local disp = SafeString(StatField(stat, "DisplayName") or StatField(stat, "Name") or statName)
                                     if disp == "" then disp = statName end
-                                    local icon = SafeString(rt.Icon or "Item_Unknown")
                                     local modId = SafeString(StatField(stat, "ModId"))
                                     local source = IsVanillaModId(modId) and "vanilla" or "mod"
                                     ItemIndex[#ItemIndex+1] = {
-                                        StatName = statName,
+                                        StatName    = statName,
                                         DisplayName = disp,
-                                        Icon = icon,
-                                        Source = source,
+                                        Icon        = "Item_Unknown",
+                                        Source      = source,
+                                        Rarity      = SafeString(StatField(stat, "Rarity")),
+                                        Slot        = slot,
+                                        PassivesOnEquip = SafeString(StatField(stat, "PassivesOnEquip")),
+                                        StatusOnEquip   = SafeString(StatField(stat, "StatusOnEquip")),
+                                        Boosts          = SafeString(StatField(stat, "Boosts") or StatField(stat, "DefaultBoosts")),
+                                        ModId           = modId,
+                                        ModName         = "",
+                                        ModAuthor       = "",
                                     }
                                 end
                             end
                         end
                     end
                 end
+                AddStatsByType("Armor")
+                AddStatsByType("Weapon")
             end
         end
         -- Sort the index alphabetically by display name to ensure
@@ -282,6 +476,57 @@ local function Matches(entry, filterText)
     return (string.find(dn, ft, 1, true) ~= nil) or (string.find(sn, ft, 1, true) ~= nil)
 end
 
+--
+-- Helper to attach a descriptive tooltip to a search result's icon.
+-- The provided image handle must support :Tooltip(), which returns
+-- an ExtuiTooltip object.  The entry table should include fields
+-- such as DisplayName, StatName, Rarity, Slot, PassivesOnEquip,
+-- StatusOnEquip, Boosts, and mod info.  The tooltip will be
+-- populated with the item's icon, name and stat name, as well as
+-- additional metadata if available.  If mod information is not
+-- present the tooltip will indicate whether the item comes from the
+-- base game.
+--
+local function AddItemTooltip(imageObj, entry)
+    -- Ensure both parameters are present and the image supports a tooltip
+    if not imageObj or not entry or type(entry) ~= "table" or not imageObj.Tooltip then
+        return
+    end
+    local tip = imageObj:Tooltip()
+    -- Show a slightly larger icon for clarity
+    local iconId = entry.Icon or "Item_Unknown"
+    tip:AddImage(iconId, {32, 32})
+    -- Item name and stat name
+    local nameLine = (entry.DisplayName or entry.StatName or "Unknown") .. " (" .. (entry.StatName or "") .. ")"
+    tip:AddText(nameLine)
+    -- Rarity and slot
+    if entry.Rarity and entry.Rarity ~= "" then
+        tip:AddText("Rarity: " .. tostring(entry.Rarity))
+    end
+    if entry.Slot and entry.Slot ~= "" then
+        tip:AddText("Slot: " .. tostring(entry.Slot))
+    end
+    -- Passives, status and boosts
+    if entry.PassivesOnEquip and entry.PassivesOnEquip ~= "" then
+        tip:AddText("Passives: " .. tostring(entry.PassivesOnEquip))
+    end
+    if entry.StatusOnEquip and entry.StatusOnEquip ~= "" then
+        tip:AddText("Status On Equip: " .. tostring(entry.StatusOnEquip))
+    end
+    if entry.Boosts and entry.Boosts ~= "" then
+        tip:AddText("Boosts: " .. tostring(entry.Boosts))
+    end
+    -- Origin information.  Prefer explicit mod info if provided.
+    if entry.ModName and entry.ModName ~= "" then
+        local author = entry.ModAuthor or ""
+        tip:AddText(string.format("From mod '%s' by %s", entry.ModName, author))
+    elseif entry.Source == "vanilla" then
+        tip:AddText("From base game")
+    else
+        tip:AddText("From unknown source")
+    end
+end
+
 -- ============================================================
 -- UI
 -- ============================================================
@@ -289,222 +534,196 @@ local uiSearch = ""
 local sourceFilter = 0 -- 0=Both, 1=Vanilla, 2=Modded
 
 if Mods and Mods.BG3MCM and Mods.BG3MCM.IMGUIAPI then
-    Mods.BG3MCM.IMGUIAPI:InsertModMenuTab(ModuleUUID, "Immune Items", function(tab)
-
+    -- Insert the "Immune Items" tab.  This UI mirrors Attunement's item
+    -- configuration menu by providing a search box, a drop‑down to list
+    -- items by their originating mod, and a two‑column table where each
+    -- item can be toggled as immune via a checkbox.  When an item is
+    -- checked it is added to the `immuneStatsClient` table; when
+    -- unchecked it is removed.  All changes are immediately pushed to
+    -- the server via `PushClientListToServer()`.
+    Mods.BG3MCM.IMGUIAPI:InsertModMenuTab(ModuleUUID, "Immune Items", function(tabHeader)
+        -- Make sure the item index and lookup table are populated.  This
+        -- scans all root templates for Armor and Weapon items and caches
+        -- them in `ItemIndex` and `ItemIndexByStatName`.
         EnsureItemIndex()
 
-        -- We'll build the search results dynamically using a helper
-        -- function defined later in this scope, so no forward
-        -- declarations are needed here.
-
-        tab:AddText("Add items that should be immune to destruction (StatName-based).")
-        tab:AddSeparator()
-
-        -- Use a single table for the SizeHint instead of a nested table.  A
-        -- nested table causes the window height to collapse to zero and
-        -- makes its children invisible on some BG3SE builds.  See
-        -- https://github.com/Norbyte/bg3se/issues/358 for details.
-        -- Give child windows a fixed positive width so that they occupy space.  A
-        -- width of 0 causes the window to collapse on some builds, hiding
-        -- its contents.
-        local controls = tab:AddChildWindow("dd_immune_controls", {600, 70})
-        controls.NoScrollbar = true
-
-        controls:AddText("Search")
-        UISameLine()
-        local search = controls:AddInputText("")
-        search.IDContext = "DD_ImmuneSearch"
-        search.SameLine = true
-        search.SizeHint = {260, 36}
-        -- Provide a hint so users know they can search by item name or stat
-        search.Hint = "Search by item name or stat"
-        -- search.OnChange will be assigned later once RefreshResults is defined
-
-        controls:AddText("Vanilla/Modded")
-        local optBoth = controls:AddRadioButton("Both", true)
-        optBoth.IDContext = "dd_src_both"
-        optBoth.SameLine = true
-        local optVan = controls:AddRadioButton("Vanilla", false)
-        optVan.IDContext = "dd_src_van"
-        optVan.SameLine = true
-        local optMod = controls:AddRadioButton("Modded", false)
-        optMod.IDContext = "dd_src_mod"
-
-        tab:AddSeparator()
-
-        -- Containers for search results and current immune items.  We build
-        -- tables inside these containers on each refresh rather than
-        -- prebuilding child windows for every row.  Tables natively support
-        -- scrolling and row backgrounds.
-        local resultsContainer = tab:AddChildWindow("dd_search_results_container", {600, 420})
-        local currentContainer = tab:AddChildWindow("dd_immune_current_container", {600, 220})
-
-        -- Helper to determine the current source filter from the radio
-        -- buttons.  When neither Vanilla nor Modded is selected, both
-        -- types are shown.
-        local function GetSourceFilter()
-            if optVan.Active then return "vanilla" end
-            if optMod.Active then return "mod" end
-            return "both"
-        end
-
-        -- Forward declaration for the result refresh function.  This
-        -- allows RenderCurrent() to call RefreshResults() even though
-        -- the full implementation appears later in this file.
-        local RefreshResults
-
-        -- Render the list of currently immune items.  Each entry
-        -- displays the icon and display name, along with a small
-        -- remove button to unassign immunity.  Rebuilding this list on
-        -- every change is cheap because there are typically only a
-        -- handful of entries.
-        local function RenderCurrent()
-            -- Clear and rebuild the list of current immune items using a table.
-            UIClearChildren(currentContainer)
-            currentContainer:AddText("Current immune items:")
-            local list = BuildClientList()
-            if #list == 0 then
-                currentContainer:AddText("(None)")
-                return
-            end
-            local curTable = currentContainer:AddTable("dd_immune_items_table", 2)
-            curTable.RowBg = true
-            curTable.ScrollY = true
-            curTable.SizingFixedFit = true
-            curTable.NoHostExtendX = true
-            curTable.Borders = true
-            for _, statName in ipairs(list) do
-                local entry = ItemIndexByStatName and ItemIndexByStatName[statName] or nil
-                local row = curTable:AddRow()
-                -- Column 1: icon and display name
-                local c1 = row:AddCell()
-                if entry and IsSafeIcon(entry.Icon) then
-                    c1:AddImage(entry.Icon, {24, 24})
-                    UISameLine()
-                end
-                local disp = statName
-                if entry and entry.DisplayName and entry.DisplayName ~= "" then
-                    disp = entry.DisplayName .. " (" .. statName .. ")"
-                end
-                c1:AddText(disp)
-                -- Column 2: remove button
-                local c2 = row:AddCell()
-                local remBtn = c2:AddButton("x")
-                remBtn.OnClick = function()
-                    immuneStatsClient[statName] = nil
-                    PushClientListToServer()
-                    RenderCurrent()
-                    RefreshResults()
-                end
-            end
-        end
-
-        -- Build and display the current search results based on the
-        -- search text and source filter.  This function completely
-        -- rebuilds the contents of resultsList each time it is called.
-        RefreshResults = function()
-            -- Clear the results container and rebuild a table of matches
-            UIClearChildren(resultsContainer)
-            local ft = string.lower(search.Text or "")
-            local sf = GetSourceFilter()
-            local matches = {}
-            for _, entry in ipairs(ItemIndex) do
-                if sf == "both" or entry.Source == sf then
-                    local ok = true
-                    if ft ~= "" then
-                        local dn = string.lower(entry.DisplayName or "")
-                        local sn = string.lower(entry.StatName or "")
-                        ok = (string.find(dn, ft, 1, true) ~= nil) or (string.find(sn, ft, 1, true) ~= nil)
-                    end
-                    if ok then
-                        matches[#matches+1] = entry
-                    elseif ft == "" and #matches < 100 then
-                        matches[#matches+1] = entry
-                    end
-                    if ft == "" and #matches >= 100 then break end
-                end
-            end
-            if #matches == 0 then
-                resultsContainer:AddText("No matches found. Type to search.")
-                return
-            end
-            local displayed = 0
-            local resTable = resultsContainer:AddTable("dd_search_results_table", 3)
-            resTable.RowBg = true
-            resTable.ScrollY = true
-            resTable.SizingFixedFit = true
-            resTable.NoHostExtendX = true
-            resTable.Borders = true
-            for _, entry in ipairs(matches) do
-                displayed = displayed + 1
-                if displayed > 600 then
-                    local msgRow = resTable:AddRow()
-                    local msgCell = msgRow:AddCell()
-                    msgCell:AddText("(Results capped; refine search for more.)")
-                    -- fill remaining cells to keep row structure
-                    for i = 2, 3 do msgRow:AddCell():AddText("") end
-                    break
-                end
-                local row = resTable:AddRow()
-                -- Column 1: icon and name
-                local c1 = row:AddCell()
-                if IsSafeIcon(entry.Icon) then
-                    c1:AddImage(entry.Icon, {24, 24})
-                    UISameLine()
-                end
-                c1:AddText(string.format("%s (%s)", entry.DisplayName, entry.StatName))
-                -- Column 2: source label
-                local c2 = row:AddCell()
-                c2:AddText(entry.Source)
-                -- Column 3: add/remove button
-                local c3 = row:AddCell()
-                local btn = c3:AddButton("+")
-                if immuneStatsClient[entry.StatName] == true then
-                    btn.Label = "x"
+        -- Build mappings from mod IDs to their display names and from
+        -- mod names to their IDs.  We only include mods that actually
+        -- contribute items to the index (i.e. entries with a non‑empty
+        -- ModId).  Vanilla/base game items have an empty ModId and are
+        -- grouped under the "Base Game" label.
+        local entriesByModId = {}
+        local modIdByName = {}
+        for _, entry in ipairs(ItemIndex) do
+            local modId = entry.ModId or ""
+            local modName = "Base Game"
+            if modId ~= "" then
+                local ok, modInfo = pcall(Ext.Mod.GetMod, modId)
+                if ok and modInfo and modInfo.Info and modInfo.Info.Name then
+                    modName = modInfo.Info.Name
                 else
-                    btn.Label = "+"
+                    modName = "Unknown Mod"
                 end
-                btn.OnClick = function()
-                    local already = immuneStatsClient[entry.StatName] == true
-                    if already then
-                        immuneStatsClient[entry.StatName] = nil
+            end
+            if not entriesByModId[modId] then entriesByModId[modId] = {} end
+            modIdByName[modName] = modId
+            table.insert(entriesByModId[modId], entry)
+        end
+        -- Sort each mod group alphabetically by display name to ensure a
+        -- consistent order.  Also build a sorted list of mod names for the
+        -- combo box.
+        local modNames = {}
+        for id, list in pairs(entriesByModId) do
+            table.sort(list, function(a, b)
+                local an = a.DisplayName or a.StatName
+                local bn = b.DisplayName or b.StatName
+                return an < bn
+            end)
+            local name = nil
+            if id == "" then
+                name = "Base Game"
+            else
+                -- Find the mod name by reverse lookup
+                for n, modId in pairs(modIdByName) do
+                    if modId == id then name = n; break end
+                end
+                if not name then name = "Unknown Mod" end
+            end
+            table.insert(modNames, name)
+        end
+        table.sort(modNames)
+
+        -- Header instructions
+        tabHeader:AddText("Toggle which items are immune to destruction. Search by name or list by mod.")
+
+        -- Search input.  When text is present the mod combo is ignored.
+        local searchInput = tabHeader:AddInputText("")
+        searchInput.Hint = "Case-insensitive"
+        searchInput.AutoSelectAll = true
+        searchInput.EscapeClearsAll = true
+
+        -- Combo to list all items by mod.  Selecting a mod clears the
+        -- search box and displays all entries from that mod.  The combo
+        -- remains empty when no mod filter is applied.
+        tabHeader:AddText("List all items by mod - will be cleared if above search is used")
+        local getAllForModCombo = tabHeader:AddCombo("")
+        getAllForModCombo.WidthFitPreview = true
+        getAllForModCombo.Options = modNames
+
+        -- Results table.  It remains hidden until there is either a
+        -- search string or a mod selected.
+        local resultsTable = tabHeader:AddTable("ImmuneResultsTable", 2)
+        resultsTable.Hideable = true
+        resultsTable.Visible = false
+        resultsTable.ScrollY = true
+        resultsTable.RowBg = true
+        resultsTable:AddColumn("Item", "WidthStretch")
+        resultsTable:AddColumn("Immune")
+
+        -- Create a header row with labels for the two columns.
+        local headerRow = resultsTable:AddRow()
+        headerRow.Headers = true
+        headerRow:AddCell():AddText("Item")
+        headerRow:AddCell():AddText("Immune")
+
+        -- Helper to clear result rows but preserve the header.
+        local function ClearResults()
+            -- Remove all children except the first (the header row)
+            for i = #resultsTable.Children, 2, -1 do
+                local child = resultsTable.Children[i]
+                resultsTable:RemoveChild(child)
+            end
+        end
+
+        -- Populate the table based on a list of entries.
+        local function DisplayEntries(entries)
+            ClearResults()
+            if not entries or #entries == 0 then
+                resultsTable.Visible = false
+                return
+            end
+            resultsTable.Visible = true
+            for _, entry in ipairs(entries) do
+                local row = resultsTable:AddRow()
+                -- Column 1: icon and display name
+                local nameCell = row:AddCell()
+                if IsSafeIcon(entry.Icon) then
+                    local icon = nameCell:AddImage(entry.Icon, { 32, 32 })
+                    icon.SameLine = true
+                    -- Attach a tooltip describing the item
+                    AddItemTooltip(icon, entry)
+                end
+                local label = string.format("%s (%s)", entry.DisplayName or entry.StatName, entry.StatName or "")
+                nameCell:AddText(label).SameLine = true
+                -- Column 2: immune checkbox
+                local immuneCell = row:AddCell()
+                -- Check the checkbox if the stat name is present in the
+                -- immunity map.  We ignore the stored boolean value (true/false).
+                local checked = immuneStatsClient[entry.StatName] ~= nil
+                local checkbox = immuneCell:AddCheckbox("", checked)
+                checkbox.OnChange = function()
+                    if checkbox.Checked then
+                        -- Mark the stat as immune by adding it to the map.  The
+                        -- stored value is `false` for consistency with the
+                        -- server’s representation (Attunement style).  Using
+                        -- `false` rather than `true` avoids confusion when
+                        -- serialising to JSON and ensures nil/absence
+                        -- differentiates unselected items.
+                        immuneStatsClient[entry.StatName] = false
                     else
-                        immuneStatsClient[entry.StatName] = true
+                        -- Remove the stat name entirely to indicate it is not
+                        -- immune.
+                        immuneStatsClient[entry.StatName] = nil
                     end
                     PushClientListToServer()
-                    RenderCurrent()
-                    btn.Label = (immuneStatsClient[entry.StatName] and "x") or "+"
                 end
             end
         end
 
-        -- Attach search and radio button callbacks to trigger a refresh
-        -- whenever the user interacts with the controls.
-        search.OnChange = function(_)
+        -- Refresh results based on the current search text and mod filter.
+        local function RefreshResults()
+            local text = searchInput.Text or ""
+            text = string.lower(text)
+            if text ~= "" then
+                -- When searching by text, clear mod combo and filter all items
+                getAllForModCombo.SelectedIndex = -1
+                local matches = {}
+                for _, entry in ipairs(ItemIndex) do
+                    local dn = string.lower(entry.DisplayName or "")
+                    local sn = string.lower(entry.StatName or "")
+                    if string.find(dn, text, 1, true) or string.find(sn, text, 1, true) then
+                        table.insert(matches, entry)
+                    end
+                end
+                DisplayEntries(matches)
+            else
+                -- If no search, check if a mod is selected
+                local idx = getAllForModCombo.SelectedIndex
+                if idx and idx >= 0 then
+                    -- Selected index is zero‑based in this API, so add 1
+                    local modName = getAllForModCombo.Options[idx + 1]
+                    local modId = modIdByName[modName]
+                    local entries = entriesByModId[modId] or {}
+                    DisplayEntries(entries)
+                else
+                    -- Nothing to show
+                    DisplayEntries({})
+                end
+            end
+        end
+
+        -- Bind events
+        searchInput.OnChange = function()
+            -- Changing the search will always refresh results
             RefreshResults()
         end
-        optBoth.OnChange = function(_)
-            optBoth.Active = true
-            optVan.Active  = false
-            optMod.Active  = false
-            RefreshResults()
-        end
-        optVan.OnChange = function(_)
-            optBoth.Active = false
-            optVan.Active  = true
-            optMod.Active  = false
-            RefreshResults()
-        end
-        optMod.OnChange = function(_)
-            optBoth.Active = false
-            optVan.Active  = false
-            optMod.Active  = true
+        getAllForModCombo.OnChange = function()
+            -- Clear the search box when selecting a mod
+            searchInput.Text = ""
             RefreshResults()
         end
 
-        -- Initial population of both lists
-        RenderCurrent()
+        -- Initial refresh to populate the table if a default mod is selected
         RefreshResults()
-
     end)
 end

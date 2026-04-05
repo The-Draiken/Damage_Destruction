@@ -75,6 +75,93 @@ CanMerge 1
 new subtable "1,1"
 object category "I_OBJ_Scroll_Revivify_TrueResurrection",1,0,0,0,0,0,0,0
 
+new treasuretable "GOB_ZhentQuarters"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_7ef78dd5-feff-4a70-9af2-43d03570d291",2,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_bf0f79fc-eb04-4e4f-9f0b-842c0c676c09",3,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",3,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_cbe31b42-22a8-4e26-a56f-0645d081503a",4,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",4,0,0,0,0,0,0,0
+
+new treasuretable "PLA_ZhentarimTrader_Extra"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_bf0f79fc-eb04-4e4f-9f0b-842c0c676c09",2,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",1,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",3,0,0,0,0,0,0,0
+
+new treasuretable "UND_SocietyOfBrilliance_Hobgoblin"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",2,0,0,0,0,0,0,0
+
+new treasuretable "UND_SocietyOfBrilliance_Mindflayer"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",1,0,0,0,0,0,0,0
+
+new treasuretable "UND_KC_Trader_Utility"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_cbe31b42-22a8-4e26-a56f-0645d081503a",2,0,0,0,0,0,0,0
+
+new treasuretable "CRE_Expeditioner_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",1,0,0,0,0,0,0,0
+
+new treasuretable "CRE_GithQuartermistress_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",5,0,0,0,0,0,0,0
+
+new treasuretable "HAV_HarperQuarterMaster_Magic_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_bf0f79fc-eb04-4e4f-9f0b-842c0c676c09",1,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",1,0,0,0,0,0,0,0
+
+new treasuretable "HAV_Thiefling_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",1,0,0,0,0,0,0,0
+
+new treasuretable "MOO_BugBearvendor_Trade"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",2,0,0,0,0,0,0,0
+
+new treasuretable "SHA_MerregonTrader"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",1,0,0,0,0,0,0,0
+
+new treasuretable "LOW_SorcerousSundries_Trade_Magic"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_7ef78dd5-feff-4a70-9af2-43d03570d291",4,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_bf0f79fc-eb04-4e4f-9f0b-842c0c676c09",5,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_e59a2f43-3152-4b23-9288-b4dcb1ca8582",6,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_cbe31b42-22a8-4e26-a56f-0645d081503a",7,0,0,0,0,0,0,0
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",8,0,0,0,0,0,0,0
+
+new treasuretable "LOW_DevilsFee_Diabolist_Trade_Magic"
+CanMerge 1
+new subtable "1,1"
+object category "I_UTAM_Scroll_OBJ_0be66f48-4920-4d7e-ab1d-ce8dce417d01",1,0,0,0,0,0,0,0
+
 
 
 

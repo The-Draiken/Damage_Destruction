@@ -30,8 +30,6 @@ local function Snapshot()
     return {
         Enabled = CFG.Enabled,
         AffectScope = CFG.AffectScope,
-        OverkillStep = CFG.OverkillStep,
-        ConditionalRequiresOverkill = CFG.ConditionalRequiresOverkill,
         StackingEnabled = CFG.StackingEnabled,
         IgnoreLegendaries = CFG.IgnoreLegendaries,
         IgnoreAdamantine = CFG.IgnoreAdamantine,
@@ -45,8 +43,6 @@ local function Apply(t)
     if type(t) ~= "table" then return end
     if type(t.Enabled) == "boolean" then CFG.Enabled = t.Enabled end
     if type(t.AffectScope) == "string" then CFG.AffectScope = t.AffectScope end
-    if type(t.OverkillStep) == "number" then CFG.OverkillStep = t.OverkillStep end
-    if type(t.ConditionalRequiresOverkill) == "boolean" then CFG.ConditionalRequiresOverkill = t.ConditionalRequiresOverkill end
     if type(t.StackingEnabled) == "boolean" then CFG.StackingEnabled = t.StackingEnabled end
     if type(t.IgnoreLegendaries) == "boolean" then CFG.IgnoreLegendaries = t.IgnoreLegendaries end
     if type(t.IgnoreAdamantine) == "boolean" then CFG.IgnoreAdamantine = t.IgnoreAdamantine end
@@ -70,28 +66,40 @@ end
 function CFG.EnsureDefaults()
     if CFG.Enabled == nil then CFG.Enabled = true end
     if CFG.AffectScope == nil then CFG.AffectScope = "all" end
-    if CFG.OverkillStep == nil then CFG.OverkillStep = 10 end
-    if CFG.ConditionalRequiresOverkill == nil then CFG.ConditionalRequiresOverkill = false end
     if CFG.StackingEnabled == nil then CFG.StackingEnabled = true end
     if CFG.IgnoreLegendaries == nil then CFG.IgnoreLegendaries = true end
     if CFG.IgnoreAdamantine == nil then CFG.IgnoreAdamantine = true end
 
-    CFG.DamageRules = CFG.DamageRules or {
-        Acid        = { mode = "all" },
-        Fire        = { mode = "all" },
-        Cold        = { mode = "all" },
-        Lightning   = { mode = "all" },
-        Radiant     = { mode = "all" },
-        Necrotic    = { mode = "all" },
+    -- Configure per-damage-type rules.
+    local defaultRules = {
+        Acid        = { mode = "all",    step = 10, chunking = false },
+        Fire        = { mode = "all",    step = 10, chunking = false },
+        Cold        = { mode = "all",    step = 10, chunking = false },
+        Lightning   = { mode = "all",    step = 10, chunking = false },
+        Radiant     = { mode = "all",    step = 10, chunking = false },
+        Necrotic    = { mode = "all",    step = 10, chunking = false },
 
-        Force       = { mode = "random" },
-        Bludgeoning = { mode = "random" },
-        Thunder     = { mode = "random" },
-        Piercing    = { mode = "random" },
-        Slashing    = { mode = "random" },
-        Poison      = { mode = "random" },
-        Psychic     = { mode = "random" },
+        Force       = { mode = "random", step = 10, chunking = false, chunkThreshold = 30 },
+        Bludgeoning = { mode = "random", step = 10, chunking = false, chunkThreshold = 30 },
+        Thunder     = { mode = "random", step = 10, chunking = false, chunkThreshold = 30 },
+        Piercing    = { mode = "random", step = 10, chunking = false },
+        Slashing    = { mode = "random", step = 10, chunking = false },
+        Poison      = { mode = "random", step = 10, chunking = false },
+        Psychic     = { mode = "random", step = 10, chunking = false },
     }
+
+    CFG.DamageRules = CFG.DamageRules or {}
+    for dmg, def in pairs(defaultRules) do
+        local r = CFG.DamageRules[dmg]
+        if type(r) ~= "table" then
+            r = {}
+            CFG.DamageRules[dmg] = r
+        end
+        if r.mode == nil then r.mode = def.mode end
+        if r.step == nil then r.step = def.step end
+        if r.chunking == nil then r.chunking = def.chunking end
+        if def.chunkThreshold ~= nil and r.chunkThreshold == nil then r.chunkThreshold = def.chunkThreshold end
+    end
 
     CFG.ImmuneStatNames = CFG.ImmuneStatNames or {}
     CFG.ImmuneTemplateIds = CFG.ImmuneTemplateIds or {}
@@ -103,11 +111,6 @@ function CFG.UpdateFromMCM(settingId, value)
         CFG.Enabled = (value == true)
     elseif settingId == "affect_scope" then
         CFG.AffectScope = tostring(value)
-    elseif settingId == "overkill_threshold" then
-        local n = tonumber(value)
-        if n ~= nil then CFG.OverkillStep = n end
-    elseif settingId == "conditional_requires_overkill" then
-        CFG.ConditionalRequiresOverkill = (value == true)
     elseif settingId == "stacking_enabled" then
         CFG.StackingEnabled = (value == true)
     elseif settingId == "ignore_legendaries" then
@@ -119,24 +122,74 @@ function CFG.UpdateFromMCM(settingId, value)
         CFG.DamageRules = CFG.DamageRules or {}
         CFG.DamageRules[dmg] = CFG.DamageRules[dmg] or {}
         CFG.DamageRules[dmg].mode = tostring(value)
-    end
-end
-
--- Immunity list API used by client menu + server
-function CFG.SetImmuneList(entries)
-    CFG.ImmuneStatNames = {}
-    if type(entries) ~= "table" then return end
-    for _,v in ipairs(entries) do
-        if type(v) == "string" and v ~= "" then
-            CFG.ImmuneStatNames[v] = true
+    -- Per-type overkill step configuration (integer).
+    elseif type(settingId) == "string" and settingId:sub(1,13) == "damage_step__" then
+        local dmg = settingId:sub(14)
+        local n = tonumber(value)
+        CFG.DamageRules = CFG.DamageRules or {}
+        CFG.DamageRules[dmg] = CFG.DamageRules[dmg] or {}
+        -- Store the numeric value when provided.
+        if n ~= nil then
+            CFG.DamageRules[dmg].step = n
+        else
+            CFG.DamageRules[dmg].step = nil
+        end
+    -- Per‑type chunking configuration (checkbox); defaults to false when nil
+    elseif type(settingId) == "string" and settingId:sub(1,17) == "damage_chunking__" then
+        local dmg = settingId:sub(18)
+        CFG.DamageRules = CFG.DamageRules or {}
+        CFG.DamageRules[dmg] = CFG.DamageRules[dmg] or {}
+        CFG.DamageRules[dmg].chunking = (value == true)
+    elseif type(settingId) == "string" and settingId:sub(1,24) == "damage_chunk_threshold__" then
+        local dmg = settingId:sub(25)
+        local n = tonumber(value)
+        CFG.DamageRules = CFG.DamageRules or {}
+        CFG.DamageRules[dmg] = CFG.DamageRules[dmg] or {}
+        if n ~= nil then
+            CFG.DamageRules[dmg].chunkThreshold = n
         end
     end
 end
 
+-- Immunity list API used by client menu + server
+--
+-- SetImmuneList
+--
+-- Replace the current immunity table with the provided list of StatNames.
+-- Historically this function stored `true` for each stat name, but that
+-- conflated the presence of a key with its value.  Inspired by the
+-- Attunement mod’s overrides (which map each stat to `false`), we now
+-- assign the value `false` for every entry.  Presence of the key
+-- indicates the stat is immune; the value itself is not used.  This
+-- mirrors Attunement’s requiresAttunementOverrides and avoids issues
+-- where falsy values were misinterpreted when sent over the network or
+-- serialised to JSON.
+function CFG.SetImmuneList(entries)
+    -- Reset the immunity table entirely.
+    CFG.ImmuneStatNames = {}
+    if type(entries) ~= "table" then return end
+    for _, v in ipairs(entries) do
+        if type(v) == "string" and v ~= "" then
+            -- Store the override value as `false` (Attunement style).  We
+            -- do not rely on the value when checking immunity; only the
+            -- presence of the key matters.
+            CFG.ImmuneStatNames[v] = false
+        end
+    end
+end
+
+-- Return a sorted list of all stat names that are immune.  Only the keys
+-- are relevant; values (true/false) are ignored.  This function
+-- deduplicates entries and sorts them deterministically for use in the UI
+-- and network payloads.
 function CFG.BuildImmuneList()
     local out = {}
     if CFG.ImmuneStatNames then
-        for k,_ in pairs(CFG.ImmuneStatNames) do table.insert(out, k) end
+        for k, _ in pairs(CFG.ImmuneStatNames) do
+            if type(k) == "string" and k ~= "" then
+                table.insert(out, k)
+            end
+        end
     end
     table.sort(out)
     return out
@@ -178,7 +231,10 @@ function CFG.IsItemImmune(itemGuid)
     if CFG.IgnoreLegendaries == true and IsLegendary(itemGuid) then return true end
     if CFG.IgnoreAdamantine == true and IsAdamantine(itemGuid) then return true end
     local stat = GetItemStatName(itemGuid)
-    if type(stat) == "string" and CFG.ImmuneStatNames and CFG.ImmuneStatNames[stat] then
+    -- If the stat name is present in the immune map, treat it as immune.  We
+    -- ignore the stored boolean value (true/false) because presence alone
+    -- indicates immunity.
+    if type(stat) == "string" and CFG.ImmuneStatNames and CFG.ImmuneStatNames[stat] ~= nil then
         return true
     end
     return false
