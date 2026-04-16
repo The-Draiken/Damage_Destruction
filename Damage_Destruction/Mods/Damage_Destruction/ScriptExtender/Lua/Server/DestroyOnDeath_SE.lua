@@ -403,42 +403,70 @@ local function DestroyBreastItem(charGuid)
 end
 
 local function ComputeItemsToDestroy(charGuid)
+    -- Determine how many items (if any) should be destroyed when this character dies.
+    -- This function has been tightened up to avoid unintended destruction.  It now
+    -- requires a valid hit record with positive overkill and honours per‑type
+    -- thresholds for both "all" and "random" modes.  A non‑positive step is
+    -- treated as disabling destruction for that damage type.
     if not DestroyOnDeathConfig or not DestroyOnDeathConfig.Enabled then return 0 end
     local hit = LastHit[charGuid]
+    -- No hit information?  Do not destroy anything.
     if not hit then return 0 end
 
+    -- Normalise the damage type and extract overkill.  Default to zero if the
+    -- values are missing or malformed.
     local dmgType = NormalizeDamageType(hit.damageType)
-    local overkill = hit.overkill or 0
+    local overkill = tonumber(hit.overkill) or 0
+    if overkill <= 0 then
+        -- If there was no overkill, there is no justification for item destruction.
+        return 0
+    end
+
     local cfg = DestroyOnDeathConfig or {}
     local rules = cfg.DamageRules or {}
     -- Lookup the per‑type rule; attempt multiple casings for robustness
     local rule = rules[dmgType] or rules[dmgType:lower()] or rules[dmgType:upper()] or {}
-    local mode = rule.mode or "none"
-    -- Determine the per-type overkill step used for random destruction tiers.
-    local step = tonumber(rule.step) or 0
+    local mode = tostring(rule.mode or "none"):lower()
+    -- Determine the per‑type overkill step used for random destruction tiers.
+    local step = tonumber(rule.step)
+    if step == nil then step = 0 end
     local stackingEnabled = rule.stacking
     if stackingEnabled == nil then stackingEnabled = cfg.StackingEnabled end
 
     DPrint(("ComputeItemsToDestroy: raw=%s norm=%s mode=%s overkill=%s step=%s stacking=%s")
-      :format(tostring(hit.damageType), tostring(dmgType), tostring(mode), tostring(overkill), tostring(step), tostring(stackingEnabled)))
+        :format(tostring(hit.damageType), tostring(dmgType), tostring(mode), tostring(overkill), tostring(step), tostring(stackingEnabled)))
 
-    -- Modes: none -> destroy nothing; all -> destroy all; random -> compute tiers
+    -- Mode "none": explicitly disable item destruction for this damage type.
     if mode == "none" then return 0 end
-    if mode == "all" then return -1 end
 
-    -- For "random" mode, if step is zero or negative, just destroy one item
-    if mode ~= "random" then return 0 end
-
-    if step <= 0 then
-        return 1
-    end
-    -- Random destruction now always keys off full overkill steps for that damage type.
-    -- The first item requires meeting the first configured step, and each additional
-    -- full step adds one more random item when stacking is enabled.
-    if overkill < step then
+    -- Mode "all": destroy all equipped items only when overkill meets the step threshold.
+    -- If no step is set (<= 0), treat it as disabling destruction.  This prevents
+    -- unexpected full destruction when the configuration is mis‑specified.
+    if mode == "all" then
+        if step > 0 and overkill >= step then
+            return -1
+        end
         return 0
     end
 
+    -- Only handle random mode here; any other value falls back to no destruction.
+    if mode ~= "random" then
+        return 0
+    end
+
+    -- A non‑positive step disables random destruction entirely.  Historically this
+    -- returned one item, but that caused unintended destruction when users
+    -- configured step=0 to disable the feature.  Now it returns zero items.
+    if step <= 0 then
+        return 0
+    end
+    -- If the overkill does not meet the first step, destroy nothing.
+    if overkill < step then
+        return 0
+    end
+    -- The first tier destroys one item; additional tiers add one more item
+    -- for each full step of overkill beyond the initial threshold when stacking
+    -- is enabled.
     local tiers = 1
     if stackingEnabled then
         tiers = tiers + math.floor(math.max(0, overkill - step) / step)
@@ -553,6 +581,13 @@ Ext.Osiris.RegisterListener("Died", 1, "after", function(char)
         end
     end
     DestroyEquippedItems(char, count)
+
+    -- Clear the hit record for this character now that item destruction (if any)
+    -- has been resolved.  Without this, stale hit data could incorrectly cause
+    -- destruction on subsequent deaths triggered by other means (e.g. scripted
+    -- deaths without an AttackedBy event).  Clearing here ensures that
+    -- ComputeItemsToDestroy returns zero until a fresh hit record is recorded.
+    LastHit[char] = nil
 end)
 
 -- === Overkill_Exploder application events ===

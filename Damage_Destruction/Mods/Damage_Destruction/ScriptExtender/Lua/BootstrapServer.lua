@@ -14,7 +14,6 @@ Ext.Require("Server/RTD_Improved.lua")
 Ext.Require("Server/WithersPriceFix.lua")
 Ext.Require("Server/WithersPrice.lua")
 Ext.Require("Server/ResurrectionPenalty.lua")
-Ext.Require("Server/RaiseDeadDecay.lua")
 Ext.Require("Server/DD_DeathBlocksRaiseDead.lua")
 -- Load the server-side item index broadcaster.  This must be
 -- required after the core destruction scripts so that the ModuleUUID

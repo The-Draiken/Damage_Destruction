@@ -51,6 +51,25 @@ local function Apply(t)
     if type(t.ImmuneTemplateIds) == "table" then CFG.ImmuneTemplateIds = t.ImmuneTemplateIds end
 end
 
+local function NormalizeImmuneStatNames(entries)
+    local normalized = {}
+    if type(entries) ~= "table" then
+        return normalized
+    end
+
+    for key, value in pairs(entries) do
+        if type(key) == "number" then
+            if type(value) == "string" and value ~= "" then
+                normalized[value] = true
+            end
+        elseif type(key) == "string" and key ~= "" then
+            normalized[key] = true
+        end
+    end
+
+    return normalized
+end
+
 function CFG.LoadFromGlobal()
     local t = ReadGlobal()
     if t then Apply(t) end
@@ -101,7 +120,7 @@ function CFG.EnsureDefaults()
         if def.chunkThreshold ~= nil and r.chunkThreshold == nil then r.chunkThreshold = def.chunkThreshold end
     end
 
-    CFG.ImmuneStatNames = CFG.ImmuneStatNames or {}
+    CFG.ImmuneStatNames = NormalizeImmuneStatNames(CFG.ImmuneStatNames)
     CFG.ImmuneTemplateIds = CFG.ImmuneTemplateIds or {}
 end
 
@@ -170,23 +189,20 @@ function CFG.SetImmuneList(entries)
     if type(entries) ~= "table" then return end
     for _, v in ipairs(entries) do
         if type(v) == "string" and v ~= "" then
-            -- Store the override value as `false` (Attunement style).  We
-            -- do not rely on the value when checking immunity; only the
-            -- presence of the key matters.
-            CFG.ImmuneStatNames[v] = false
+            CFG.ImmuneStatNames[v] = true
         end
     end
 end
 
--- Return a sorted list of all stat names that are immune.  Only the keys
--- are relevant; values (true/false) are ignored.  This function
+-- Return a sorted list of all stat names that are immune. Only entries
+-- explicitly enabled with `true` are included. This function
 -- deduplicates entries and sorts them deterministically for use in the UI
 -- and network payloads.
 function CFG.BuildImmuneList()
     local out = {}
     if CFG.ImmuneStatNames then
-        for k, _ in pairs(CFG.ImmuneStatNames) do
-            if type(k) == "string" and k ~= "" then
+        for k, enabled in pairs(CFG.ImmuneStatNames) do
+            if enabled == true and type(k) == "string" and k ~= "" then
                 table.insert(out, k)
             end
         end
@@ -231,10 +247,7 @@ function CFG.IsItemImmune(itemGuid)
     if CFG.IgnoreLegendaries == true and IsLegendary(itemGuid) then return true end
     if CFG.IgnoreAdamantine == true and IsAdamantine(itemGuid) then return true end
     local stat = GetItemStatName(itemGuid)
-    -- If the stat name is present in the immune map, treat it as immune.  We
-    -- ignore the stored boolean value (true/false) because presence alone
-    -- indicates immunity.
-    if type(stat) == "string" and CFG.ImmuneStatNames and CFG.ImmuneStatNames[stat] ~= nil then
+    if type(stat) == "string" and CFG.ImmuneStatNames and CFG.ImmuneStatNames[stat] == true then
         return true
     end
     return false

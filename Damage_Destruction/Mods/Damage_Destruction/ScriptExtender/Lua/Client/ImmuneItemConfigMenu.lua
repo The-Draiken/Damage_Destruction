@@ -30,14 +30,10 @@ local IMMUNE_REQ = ModuleUUID .. "_ImmuneStats_Request"
 local IMMUNE_SET = ModuleUUID .. "_ImmuneStats_Set"
 local IMMUNE_UPD = ModuleUUID .. "_ImmuneStats_Update"
 
--- Forward declarations for functions defined later in the file.  Lua
--- requires that local functions be declared before they can be
--- referenced by other local functions defined earlier in the chunk.
--- Without these forward declarations, functions such as
--- `PushClientListToServer` would reference `BuildClientList` and
--- `SyncFromServer` before they are defined, causing them to resolve
--- to nil.  Declaring them here ensures that the local variables
--- exist and are assigned once the actual definitions are parsed.
+-- Forward declarations for functions defined later in the file. Lua
+-- closures created earlier in the chunk must capture these locals, so
+-- the implementations below assign into these names instead of using
+-- `local function ...`, which would create shadowing locals.
 local BuildClientList
 local SyncFromServer
 
@@ -131,14 +127,14 @@ local function TemplateDisplayName(rt)
     return ""
 end
 
-local function BuildClientList()
+BuildClientList = function()
     local out = {}
     for statName, active in pairs(immuneSet) do
         -- Include any entry whose key exists.  We ignore the stored value
         -- (true/false) because presence alone indicates the user selected
         -- the item as immune.  This mirrors Attunement’s behaviour of
         -- mapping overrides to `false` while treating nil as absent.
-        if active ~= nil and type(statName) == "string" and statName ~= "" then
+        if active == true and type(statName) == "string" and statName ~= "" then
             out[#out+1] = statName
         end
     end
@@ -146,7 +142,7 @@ local function BuildClientList()
     return out
 end
 
-local function SyncFromServer(list)
+SyncFromServer = function(list)
     -- Instead of reassigning immuneSet to a new table (which would
     -- break references such as immuneStatsClient), clear the existing
     -- table and repopulate it.  This ensures that any aliases remain
@@ -164,7 +160,7 @@ local function SyncFromServer(list)
     if type(list) == "table" then
         for _, v in ipairs(list) do
             if type(v) == "string" and v ~= "" then
-                immuneSet[v] = false
+                immuneSet[v] = true
             end
         end
     end
@@ -659,8 +655,8 @@ if Mods and Mods.BG3MCM and Mods.BG3MCM.IMGUIAPI then
                 local immuneCell = row:AddCell()
                 -- Check the checkbox if the stat name is present in the
                 -- immunity map.  We ignore the stored boolean value (true/false).
-                local checked = immuneStatsClient[entry.StatName] ~= nil
-                local checkbox = immuneCell:AddCheckbox("", checked)
+                local checked = immuneStatsClient[entry.StatName] == true
+                local checkbox = immuneCell:AddCheckbox("##Immune_" .. tostring(entry.StatName or ""), checked)
                 checkbox.OnChange = function()
                     if checkbox.Checked then
                         -- Mark the stat as immune by adding it to the map.  The
@@ -669,7 +665,7 @@ if Mods and Mods.BG3MCM and Mods.BG3MCM.IMGUIAPI then
                         -- `false` rather than `true` avoids confusion when
                         -- serialising to JSON and ensures nil/absence
                         -- differentiates unselected items.
-                        immuneStatsClient[entry.StatName] = false
+                        immuneStatsClient[entry.StatName] = true
                     else
                         -- Remove the stat name entirely to indicate it is not
                         -- immune.
