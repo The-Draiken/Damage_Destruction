@@ -1,7 +1,7 @@
 -- Disintegrate_Save_ItemDestruction.lua
 -- When a target succeeds on a saving throw against Disintegrate (or its
--- upcast variants), our stats inject a hidden marker status.  This listener
--- responds by destroying one random equipped item on that target.
+-- upcast variants), our stats inject a hidden marker status. Whether this
+-- breaks one equipped item is controlled by config/MCM.
 
 ---@diagnostic disable: lowercase-global, undefined-global
 
@@ -18,6 +18,22 @@ local function DPrint(msg)
     end)
 end
 
+local function RecordDestroyedItem(charGuid, item)
+    if DD and DD.DestructionLog and type(DD.DestructionLog.Record) == "function" then
+        pcall(DD.DestructionLog.Record, charGuid, item, "Force", "DisintegrateSave")
+    end
+end
+
+local function ShouldBreakItemOnDisintegrateSave()
+    if not DestroyOnDeathConfig then
+        return false
+    end
+
+    return DestroyOnDeathConfig.Enabled == true
+        and DestroyOnDeathConfig.DisintegrateSaveBreaksItem == true
+end
+
+-- Returns { {item=guid, slot=slotName}, ... }.
 local function CollectEquippedItems(charGuid)
     local items = {}
     local seen = {}
@@ -31,11 +47,20 @@ local function CollectEquippedItems(charGuid)
                 immune = ok and res == true
             end
             if not immune then
-                items[#items+1] = item
+                items[#items+1] = { item = item, slot = slot }
             end
         end
     end
     return items
+end
+
+-- Direct call into ImmersiveNudity_SE_Patch, when it's loaded, so it can
+-- instantly strip the corresponding baked visual slot. Safe to call
+-- whether or not that mod is installed.
+local function NotifyNudityPatch(charGuid, slot)
+    if IMNSEP and IMNSEP.OnItemDestroyed then
+        pcall(IMNSEP.OnItemDestroyed, charGuid, slot)
+    end
 end
 
 local function DestroyOneRandomEquippedItem(charGuid)
@@ -47,17 +72,23 @@ local function DestroyOneRandomEquippedItem(charGuid)
     end
 
     local idx = Ext.Utils.Random(1, #items)
-    local item = items[idx]
+    local entry = items[idx]
     pcall(function() Osi.PlayEffect(charGuid, VFX_DESTROY, "", 1.0) end)
-    Osi.Unequip(charGuid, item)
-    Osi.RequestDelete(item)
-    DPrint(("Destroyed random equipped item %s on %s after Disintegrate save"):format(tostring(item), tostring(charGuid)))
+    RecordDestroyedItem(charGuid, entry.item)
+    Osi.Unequip(charGuid, entry.item)
+    Osi.RequestDelete(entry.item)
+    NotifyNudityPatch(charGuid, entry.slot)
+    DPrint(("Destroyed random equipped item %s on %s after Disintegrate save"):format(tostring(entry.item), tostring(charGuid)))
     return true
 end
 
 Ext.Osiris.RegisterListener("StatusApplied", 4, "after", function(target, status, causee, _)
     if status ~= MARKER_STATUS then return end
-    DestroyOneRandomEquippedItem(target)
+    if ShouldBreakItemOnDisintegrateSave() then
+        DestroyOneRandomEquippedItem(target)
+    else
+        DPrint(("Ignoring %s on %s because the config toggle is disabled"):format(tostring(MARKER_STATUS), tostring(target)))
+    end
     pcall(function() Osi.RemoveStatus(target, MARKER_STATUS) end)
 end)
 

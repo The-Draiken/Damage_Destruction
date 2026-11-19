@@ -21,7 +21,7 @@
               "Id": "affect_scope",
               "Name": "Affect who?",
               "Type": "enum",
-              "Default": "party",
+              "Default": "all",
               "Description": "Choose whether item destruction applies only to the player party or to every character.",
               "Options": {
                 "Choices": [
@@ -50,6 +50,90 @@
               "Type": "checkbox",
               "Default": true,
               "Description": "If enabled, Adamantine items are never destroyed."
+            },
+            {
+              "Id": "destroy_ash_body_items",
+              "Name": "Ash-body deaths destroy equipped items",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, petrify-shatter and disintegrate ash-body deaths destroy all equipped items when the hidden Raise Dead block is applied."
+            },
+            {
+              "Id": "disintegrate_save_breaks_item",
+              "Name": "Disintegrate save breaks one item",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, succeeding on a Disintegrate save destroys one random non-immune equipped item."
+            }
+          ]
+        },
+        {
+          "SectionId": "initiative_bonuses",
+          "SectionName": "Initiative bonuses",
+          "Settings": [
+            {
+              "Id": "empty_slots_initiative_enabled",
+              "Name": "Empty slots grant initiative",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, player characters and humanoids gain +1 initiative for each empty weapon slot, empty main armor slot, empty helmet slot, and empty cloak slot. Two-handed melee weapons and bows count as using both relevant weapon slots."
+            }
+          ]
+        },
+        {
+          "SectionId": "equipment_failure",
+          "SectionName": "Equipment failure",
+          "Settings": [
+            {
+              "Id": "equipment_failure_on_hit_chance",
+              "Name": "On hit equipment failure",
+              "Type": "slider_int",
+              "Default": 5,
+              "Description": "Percent chance that a positive hit can destroy one eligible equipped item after the Dexterity save.",
+              "Options": {
+                "Min": 0,
+                "Max": 100
+              }
+            },
+            {
+              "Id": "equipment_failure_on_crit_chance",
+              "Name": "On crit equipment failure",
+              "Type": "slider_int",
+              "Default": 50,
+              "Description": "Percent chance that a critical hit can separately destroy one eligible equipped item after the Dexterity save.",
+              "Options": {
+                "Min": 0,
+                "Max": 100
+              }
+            },
+            {
+              "Id": "equipment_failure_downed_chance",
+              "Name": "Downed equipment failure",
+              "Type": "slider_int",
+              "Default": 50,
+              "Description": "Percent chance that becoming downed can destroy one eligible equipped item after the Dexterity save.",
+              "Options": {
+                "Min": 0,
+                "Max": 100
+              }
+            },
+            {
+              "Id": "equipment_failure_dexterity_dc",
+              "Name": "Equipment failure save DC",
+              "Type": "slider_int",
+              "Default": 10,
+              "Description": "On-hit, crit, and downed destruction use Dexterity. Burning and Acid condition destruction use the better of Dexterity or Constitution.",
+              "Options": {
+                "Min": 1,
+                "Max": 30
+              }
+            },
+            {
+              "Id": "equipment_failure_condition_roll_advantage",
+              "Name": "Condition saves have advantage",
+              "Type": "checkbox",
+              "Default": true,
+              "Description": "If enabled, Burning and Acid condition item destruction rolls twice and keeps the better result. This applies to players and enemies according to the Affect who setting."
             }
           ]
         },
@@ -371,6 +455,33 @@
               "Type": "int",
               "Default": 30,
               "Description": "If a lethal Thunder hit deals at least this much damage, Overkill_Exploder is removed and the corpse explosion / chunking effect triggers."
+            }
+          ]
+        },
+        {
+          "SectionId": "permadeath_rules",
+          "SectionName": "Elemental permadeath",
+          "Settings": [
+            {
+              "Id": "elemental_permadeath_mode",
+              "Name": "Elemental permadeath mode",
+              "Type": "enum",
+              "Default": "death",
+              "Description": "Controls Fire, Acid, Lightning, Cold, Radiant, and Necrotic deaths. 'death' applies the Raise Dead block on any positive killing hit of those types. 'overkill' requires the killing hit's overkill to meet the threshold below. 'none' disables this automatic permadeath rule.",
+              "Options": {
+                "Choices": [
+                  "death",
+                  "overkill",
+                  "none"
+                ]
+              }
+            },
+            {
+              "Id": "elemental_permadeath_overkill_threshold",
+              "Name": "Elemental permadeath overkill threshold",
+              "Type": "int",
+              "Default": 10,
+              "Description": "Used only when elemental permadeath mode is set to 'overkill'. Zero-damage hits never apply elemental permadeath. Values of 0 or less are treated as 1."
             }
           ]
         },

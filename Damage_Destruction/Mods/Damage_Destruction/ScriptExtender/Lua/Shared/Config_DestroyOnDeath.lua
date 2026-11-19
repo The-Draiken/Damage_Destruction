@@ -33,6 +33,12 @@ local function Snapshot()
         StackingEnabled = CFG.StackingEnabled,
         IgnoreLegendaries = CFG.IgnoreLegendaries,
         IgnoreAdamantine = CFG.IgnoreAdamantine,
+        DestroyAshBodyItems = CFG.DestroyAshBodyItems,
+        DisintegrateSaveBreaksItem = CFG.DisintegrateSaveBreaksItem,
+        ElementalPermadeathMode = CFG.ElementalPermadeathMode,
+        ElementalPermadeathOverkillThreshold = CFG.ElementalPermadeathOverkillThreshold,
+        EmptySlotsInitiativeEnabled = CFG.EmptySlotsInitiativeEnabled,
+        EquipmentFailure = CFG.EquipmentFailure,
         DamageRules = CFG.DamageRules,
         ImmuneStatNames = CFG.ImmuneStatNames,
         ImmuneTemplateIds = CFG.ImmuneTemplateIds,
@@ -46,6 +52,12 @@ local function Apply(t)
     if type(t.StackingEnabled) == "boolean" then CFG.StackingEnabled = t.StackingEnabled end
     if type(t.IgnoreLegendaries) == "boolean" then CFG.IgnoreLegendaries = t.IgnoreLegendaries end
     if type(t.IgnoreAdamantine) == "boolean" then CFG.IgnoreAdamantine = t.IgnoreAdamantine end
+    if type(t.DestroyAshBodyItems) == "boolean" then CFG.DestroyAshBodyItems = t.DestroyAshBodyItems end
+    if type(t.DisintegrateSaveBreaksItem) == "boolean" then CFG.DisintegrateSaveBreaksItem = t.DisintegrateSaveBreaksItem end
+    if type(t.ElementalPermadeathMode) == "string" then CFG.ElementalPermadeathMode = t.ElementalPermadeathMode end
+    if type(t.ElementalPermadeathOverkillThreshold) == "number" then CFG.ElementalPermadeathOverkillThreshold = t.ElementalPermadeathOverkillThreshold end
+    if type(t.EmptySlotsInitiativeEnabled) == "boolean" then CFG.EmptySlotsInitiativeEnabled = t.EmptySlotsInitiativeEnabled end
+    if type(t.EquipmentFailure) == "table" then CFG.EquipmentFailure = t.EquipmentFailure end
     if type(t.DamageRules) == "table" then CFG.DamageRules = t.DamageRules end
     if type(t.ImmuneStatNames) == "table" then CFG.ImmuneStatNames = t.ImmuneStatNames end
     if type(t.ImmuneTemplateIds) == "table" then CFG.ImmuneTemplateIds = t.ImmuneTemplateIds end
@@ -88,6 +100,17 @@ function CFG.EnsureDefaults()
     if CFG.StackingEnabled == nil then CFG.StackingEnabled = true end
     if CFG.IgnoreLegendaries == nil then CFG.IgnoreLegendaries = true end
     if CFG.IgnoreAdamantine == nil then CFG.IgnoreAdamantine = true end
+    if CFG.DestroyAshBodyItems == nil then CFG.DestroyAshBodyItems = true end
+    if CFG.DisintegrateSaveBreaksItem == nil then CFG.DisintegrateSaveBreaksItem = true end
+    if CFG.ElementalPermadeathMode == nil then CFG.ElementalPermadeathMode = "death" end
+    if CFG.ElementalPermadeathOverkillThreshold == nil then CFG.ElementalPermadeathOverkillThreshold = 10 end
+    if CFG.EmptySlotsInitiativeEnabled == nil then CFG.EmptySlotsInitiativeEnabled = true end
+    CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+    if CFG.EquipmentFailure.OnHitChance == nil then CFG.EquipmentFailure.OnHitChance = 5 end
+    if CFG.EquipmentFailure.OnCritChance == nil then CFG.EquipmentFailure.OnCritChance = 50 end
+    if CFG.EquipmentFailure.DownedChance == nil then CFG.EquipmentFailure.DownedChance = 50 end
+    if CFG.EquipmentFailure.DexterityDC == nil then CFG.EquipmentFailure.DexterityDC = 10 end
+    if CFG.EquipmentFailure.ConditionRollAdvantage == nil then CFG.EquipmentFailure.ConditionRollAdvantage = true end
 
     -- Configure per-damage-type rules.
     local defaultRules = {
@@ -124,6 +147,14 @@ function CFG.EnsureDefaults()
     CFG.ImmuneTemplateIds = CFG.ImmuneTemplateIds or {}
 end
 
+local function ClampNumber(value, minValue, maxValue)
+    local n = tonumber(value)
+    if n == nil then return nil end
+    if n < minValue then return minValue end
+    if n > maxValue then return maxValue end
+    return n
+end
+
 -- Update from MCM setting ids
 function CFG.UpdateFromMCM(settingId, value)
     if settingId == "enabled" then
@@ -136,6 +167,38 @@ function CFG.UpdateFromMCM(settingId, value)
         CFG.IgnoreLegendaries = (value == true)
     elseif settingId == "ignore_adamantine" then
         CFG.IgnoreAdamantine = (value == true)
+    elseif settingId == "destroy_ash_body_items" then
+        CFG.DestroyAshBodyItems = (value == true)
+    elseif settingId == "disintegrate_save_breaks_item" then
+        CFG.DisintegrateSaveBreaksItem = (value == true)
+    elseif settingId == "elemental_permadeath_mode" then
+        CFG.ElementalPermadeathMode = tostring(value)
+    elseif settingId == "elemental_permadeath_overkill_threshold" then
+        local n = tonumber(value)
+        if n ~= nil then
+            CFG.ElementalPermadeathOverkillThreshold = n
+        end
+    elseif settingId == "empty_slots_initiative_enabled" then
+        CFG.EmptySlotsInitiativeEnabled = (value == true)
+    elseif settingId == "equipment_failure_on_hit_chance" then
+        CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+        local n = ClampNumber(value, 0, 100)
+        if n ~= nil then CFG.EquipmentFailure.OnHitChance = n end
+    elseif settingId == "equipment_failure_on_crit_chance" then
+        CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+        local n = ClampNumber(value, 0, 100)
+        if n ~= nil then CFG.EquipmentFailure.OnCritChance = n end
+    elseif settingId == "equipment_failure_downed_chance" then
+        CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+        local n = ClampNumber(value, 0, 100)
+        if n ~= nil then CFG.EquipmentFailure.DownedChance = n end
+    elseif settingId == "equipment_failure_dexterity_dc" then
+        CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+        local n = ClampNumber(value, 1, 30)
+        if n ~= nil then CFG.EquipmentFailure.DexterityDC = n end
+    elseif settingId == "equipment_failure_condition_roll_advantage" then
+        CFG.EquipmentFailure = CFG.EquipmentFailure or {}
+        CFG.EquipmentFailure.ConditionRollAdvantage = (value == true)
     elseif type(settingId) == "string" and (settingId:sub(1,11) == "dmg_mode__" or settingId:sub(1,13) == "damage_mode__") then
         local dmg = (settingId:sub(1,13) == "damage_mode__") and settingId:sub(14) or settingId:sub(12)
         CFG.DamageRules = CFG.DamageRules or {}

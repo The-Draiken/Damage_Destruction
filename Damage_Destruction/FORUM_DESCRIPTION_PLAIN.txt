@@ -1,0 +1,94 @@
+DAMAGE DESTRUCTION
+Revises death, destruction and resurrection mechanics.
+
+How you die now matters. Lethal damage can destroy the gear you were wearing, some deaths can't be undone with a quick Revivify, corpses become harder to raise with every long rest, and bringing someone back has a price. On top of that, this mod repairs the story state of NPCs and companions you revive, so they behave as if they'd survived instead of coming back mute or broken.
+
+Damage Destruction includes every fix from Raise The Dead. Don't install both together.
+
+
+REQUIREMENTS
+
+- BG3 Script Extender
+- Mod Configuration Menu (MCM)
+- 5eSpells and ImmersiveNudity (listed as dependencies)
+
+
+FEATURES
+
+Item destruction on death
+The killing blow's damage type decides what happens to the victim's equipped gear. Each damage type can be set to destroy all, random or no items.
+- Defaults: Acid, Fire, Cold, Lightning, Radiant and Necrotic destroy everything. Physical and other damage types destroy random items.
+- Overkill tiers: damage beyond the victim's remaining HP destroys more items, one extra item per 10 overkill damage by default. This is configurable per damage type.
+- Slashing: in random mode, Slashing only cuts away the chest item.
+- Who it affects: the whole world or just your party.
+- Immunities: Legendary and Adamantine items are immune by default, and you can add your own immune items.
+- Notifications: a notification names the character, the item and the cause for every destroyed item.
+
+Equipment failure in combat
+- Hits: a hit has a 5% chance to break an item, and a crit has a separate 50% chance.
+- Downed: going down has a 50% chance to break an item.
+- Saves: each break is followed by a Dexterity save (DC 10) to keep the item.
+- Burning and Acid: these conditions can also break gear. The save uses the better of Dex or Con, with optional advantage.
+All values are configurable.
+
+Ash-body deaths, Disintegrate and exploding corpses
+- Ash-body deaths: dying to Disintegrate, or shattering after being petrified, turns the body to ash. It blocks Raise Dead and, optionally, destroys all the gear they wore.
+- Disintegrate saves: surviving a Disintegrate save still destroys one random item (optional).
+- Exploding corpses: optional for Bludgeoning, Force and Thunder. Big enough lethal hits make the corpse explode, and an exploded corpse can't be raised normally.
+
+Death that sticks
+- Recent-death window: the dead have about 10 rounds during which Revivify still works.
+- Elemental permadeath: Fire, Acid, Lightning, Cold, Radiant and Necrotic killing blows can apply the strongest Raise Dead block immediately. Choose on any death, only on overkill, or off.
+- Long-rest ladder: every long rest makes a corpse harder to raise. Raise Dead needs a higher spell slot each time, until only a 9th-level Raise Dead, a True Resurrection scroll or Withers can bring them back.
+
+Resurrection has a cost
+- Constitution penalty: Resurrection and True Resurrection scrolls give both caster and target a stacking Constitution penalty, up to -8.
+- Withers is the exception: he's exempt from the penalty, and being resurrected by him clears it.
+- Withers' price: his resurrection fee rises to 8,500 gold.
+
+Empty slots grant initiative
++1 initiative for each empty weapon, armour, helmet and cloak slot. Travelling light pays off.
+
+Dead Party Members tab (MCM)
+This tab lists your dead party members and offers two ways to deal with them, so you don't have to wait for Withers:
+- Send to Camp: the same as Withers' dismissal.
+- Leave Body, Remove: takes them out of the party where they died.
+Anyone removed this way rejoins your party automatically when revived, even if your party is full.
+
+Avatar Switching tab (MCM), experimental
+While your custom character is dead, you can make a living origin companion your main character, then hand control back when your character is revived. Keep a save before you use it.
+
+Halsin's gear restore
+If Halsin dies before recruitment and permadeath destroys his gear, his equipment goes back on him when he's revived.
+
+
+NPCS ACCOUNTED FOR
+
+Every revived character gets:
+- Their leftover "defeated / can't talk" story state cleared.
+- The "stolen goods" overlay removed from their body and gear.
+- Talking working straight away. No more "not right now" until a long rest.
+- Unlisted NPCs who are still broken after revival are respawned in place.
+
+Characters with dedicated fixes:
+- Baelen Bonecloak (Act 1, Underdark). His full "rescued" quest state and dialogue are restored, and he goes back to Derryth.
+- Scratch (Act 1). Gets the right dialogue for how far his quest had gone.
+- Oskar Fevros (Act 1, Zhentarim hideout). His dialogue and "freed" state are restored, so his Act 3 quest stays available.
+- Arabella (Act 1, Druid Grove). Gets the "Kagha talked down" outcome and is reunited with her parents. Rath stops mourning her, and her dialogue is restored. Confirmed in play.
+- Aradin (Act 1, Grove entrance). His dialogue is restored to match how his confrontation with Zevlor ended.
+- Minthara (Act 1, Grove attack, before Grymforge or Moonrise). Returns to the game's own "spared" state, so she continues to Moonrise as normal.
+- Mirkon (Act 1, harpy beach). His death flags and charm are removed. If the harpies are dead, he gets the "saved the victim" outcome.
+- Halsin (Act 1, goblin camp). If the goblin leaders are dead, he thanks you and heads to the Grove. If they're alive, he follows you again.
+- Damon (Act 1, Druid Grove). Rejoins the Druid Attack fight correctly. Karlach's "Damon is dead" memory is cleared, so he can still upgrade her. Confirmed in play.
+- Eremus (Act 1, Druid Grove). Rejoins the Druid Attack fight correctly. Confirmed in play.
+
+Known limits: a journal entry that has already been written (for example "X was defeated") can't be erased. A quest the game closed because of a death can't be reopened, but the character still works normally. Fixes are added one character at a time, because BG3 scripts every story NPC by hand. Requests are welcome.
+
+
+COMPATIBILITY
+
+- Configurable Party Limit: works with it.
+- ImmersiveNudity SE Patch: destroyed gear is also stripped visually.
+- Other mods: mods that change Revivify, Raise Dead, Resurrection or Withers may conflict.
+
+Baelen fix originally datamined by whyslyy.

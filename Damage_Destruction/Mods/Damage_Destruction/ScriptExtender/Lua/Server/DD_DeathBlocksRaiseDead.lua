@@ -3,9 +3,14 @@
 -- Rest:
 --   none -> DD_DEATH_BLOCKS_RAISE_DEAD -> _1 -> _2 -> _3 -> _4
 --
--- This file is the single source of truth for the long-rest ladder. We keep
--- a small debounce because some BG3SE builds fire multiple LongRestFinished
--- callbacks for the same actual rest.
+-- This file is the single source of truth for the long-rest ladder.
+--
+-- DEAD CHARACTER DISCOVERY:
+-- We use THREE strategies to find dead characters, because DB_Dead:Get(nil)
+-- is unreliable on some BG3SE builds:
+--   1. Ext.Entity.GetAllEntitiesWithComponent("Health") - scan all loaded entities
+--   2. Osi.DB_Dead:Get(nil) - query the story database
+--   3. The `known` table - characters we have seen die during this session
 
 Ext.Utils.Print("[DD DeathBlocksRaiseDead] Loaded")
 
@@ -18,6 +23,9 @@ local TIERS = {
 }
 
 local HIDDEN_BLOCK = "DD_DEATH_BLOCKS_RAISE_DEAD_Hidden"
+local DEAD_ONE_MINUTE = "DEAD_ONE_MINUTE"
+local DEAD_TECHNICAL = "DEAD_TECHNICAL"
+local DEAD_COMBAT_BLOCK = "DEAD_COMBAT_BLOCK"
 local FORCE = 1
 local DURATION = -1.0
 local LONG_REST_DEBOUNCE_MS = 2000
@@ -34,19 +42,53 @@ local function NowMs()
             return now
         end
     end
+    if os and os.clock then
+        local ok, now = pcall(os.clock)
+        if ok and type(now) == "number" then
+            return now * 1000
+        end
+    end
+    return nil
+end
+
+local function SafeOsi(fnName, ...)
+    local fn = Osi and Osi[fnName]
+    if type(fn) ~= "function" then
+        return nil
+    end
+
+    local ok, result = pcall(fn, ...)
+    if ok then
+        return result
+    end
+
     return nil
 end
 
 local function CharExists(uuid)
-    return uuid ~= nil and uuid ~= "" and Osi.CharacterExists(uuid) == 1
+    if uuid == nil or uuid == "" or uuid == "NULL_00000000-0000-0000-0000-000000000000" then
+        return false
+    end
+
+    local exists = SafeOsi("CharacterExists", uuid)
+    if exists ~= nil then
+        return exists == 1
+    end
+
+    local isCharacter = SafeOsi("IsCharacter", uuid)
+    if isCharacter ~= nil then
+        return isCharacter == 1
+    end
+
+    return false
 end
 
 local function IsDead(uuid)
-    return CharExists(uuid) and Osi.IsDead(uuid) == 1
+    return CharExists(uuid) and SafeOsi("IsDead", uuid) == 1
 end
 
 local function HasStatus(uuid, status)
-    return CharExists(uuid) and Osi.HasActiveStatus(uuid, status) == 1
+    return CharExists(uuid) and SafeOsi("HasActiveStatus", uuid, status) == 1
 end
 
 local function HasTier(uuid, tier)
@@ -73,9 +115,19 @@ local function RemoveAllTiers(uuid)
 
     for i = 1, #TIERS do
         if HasTier(uuid, TIERS[i]) then
-            Osi.RemoveStatus(uuid, TIERS[i])
+            SafeOsi("RemoveStatus", uuid, TIERS[i])
         end
     end
+end
+
+local function RemoveRecentDeathStatuses(uuid)
+    if not CharExists(uuid) then
+        return
+    end
+
+    SafeOsi("RemoveStatus", uuid, DEAD_ONE_MINUTE)
+    SafeOsi("RemoveStatus", uuid, DEAD_TECHNICAL)
+    SafeOsi("RemoveStatus", uuid, DEAD_COMBAT_BLOCK)
 end
 
 local function ApplyTier(uuid, tierIndex)
@@ -88,7 +140,8 @@ local function ApplyTier(uuid, tierIndex)
     end
 
     RemoveAllTiers(uuid)
-    Osi.ApplyStatus(uuid, TIERS[tierIndex], DURATION, FORCE)
+    RemoveRecentDeathStatuses(uuid)
+    SafeOsi("ApplyStatus", uuid, TIERS[tierIndex], DURATION, FORCE)
 
     Ext.Utils.Print(string.format(
         "[DD DeathBlocksRaiseDead] Applied tier %d (%s) to %s",
@@ -131,6 +184,8 @@ local function AdvanceOrSeed(uuid)
     -- Hidden corpse-block cases are managed elsewhere and should not enter
     -- the visible long-rest ladder.
     if HasHiddenBlock(uuid) then
+        RemoveAllTiers(uuid)
+        RemoveRecentDeathStatuses(uuid)
         Ext.Utils.Print(string.format(
             "[DD DeathBlocksRaiseDead] Skipping hidden corpse %s",
             tostring(uuid)
@@ -145,6 +200,7 @@ local function AdvanceOrSeed(uuid)
     end
 
     if cur >= #TIERS then
+        RemoveRecentDeathStatuses(uuid)
         Ext.Utils.Print(string.format(
             "[DD DeathBlocksRaiseDead] %s already at terminal tier %s",
             tostring(uuid),
@@ -179,26 +235,67 @@ local function AddCandidate(candidates, uuid)
     end
 end
 
+-- Collect dead characters using THREE strategies for maximum reliability.
 local function CollectDeadCandidates()
     local candidates = {}
+    local sources = { entityScan = 0, dbDead = 0, dbPlayers = 0, knownTable = 0 }
 
-    local deadRows = Osi.DB_Dead:Get(nil)
-    if deadRows then
+    -- STRATEGY 1: Scan all loaded entities with Health component.
+    -- This is the most reliable method on all BG3SE builds.
+    local ok, ents = pcall(Ext.Entity.GetAllEntitiesWithComponent, "Health")
+    if ok and type(ents) == "table" then
+        for _, e in pairs(ents) do
+            local uuid = e and e.Uuid
+            if uuid and uuid ~= "" then
+                if IsDead(uuid) then
+                    AddCandidate(candidates, uuid)
+                    sources.entityScan = sources.entityScan + 1
+                end
+            end
+        end
+    end
+
+    -- STRATEGY 2: Query DB_Dead (may be empty/unreliable on some builds).
+    local okDead, deadRows = pcall(function()
+        return Osi.DB_Dead:Get(nil)
+    end)
+    if okDead and type(deadRows) == "table" then
         for _, row in pairs(deadRows) do
-            AddCandidate(candidates, row[1])
+            local uuid = type(row) == "table" and row[1] or row
+            if uuid and uuid ~= "" and not candidates[uuid] then
+                AddCandidate(candidates, uuid)
+                sources.dbDead = sources.dbDead + 1
+            end
         end
     end
 
-    local playerRows = Osi.DB_Players:Get(nil)
-    if playerRows then
+    -- STRATEGY 3: Query DB_Players to catch player corpses.
+    local okPlayers, playerRows = pcall(function()
+        return Osi.DB_Players:Get(nil)
+    end)
+    if okPlayers and type(playerRows) == "table" then
         for _, row in pairs(playerRows) do
-            AddCandidate(candidates, row[1])
+            local uuid = type(row) == "table" and row[1] or row
+            if uuid and uuid ~= "" and not candidates[uuid] then
+                AddCandidate(candidates, uuid)
+                sources.dbPlayers = sources.dbPlayers + 1
+            end
         end
     end
 
+    -- STRATEGY 4: Our known table (characters we saw die this session).
     for uuid in pairs(known) do
-        AddCandidate(candidates, uuid)
+        if not candidates[uuid] and IsDead(uuid) then
+            candidates[uuid] = true
+            sources.knownTable = sources.knownTable + 1
+        end
     end
+
+    Ext.Utils.Print(string.format(
+        "[DD DeathBlocksRaiseDead] CollectDeadCandidates: entityScan=%d dbDead=%d dbPlayers=%d knownTable=%d total=%d",
+        sources.entityScan, sources.dbDead, sources.dbPlayers, sources.knownTable,
+        sources.entityScan + sources.dbDead + sources.dbPlayers + sources.knownTable
+    ))
 
     return candidates
 end

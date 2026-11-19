@@ -46,6 +46,32 @@ local function GetUUIDSafe(obj)
     return nil
 end
 
+local function ShouldDestroyAshBodyItems()
+    if not DestroyOnDeathConfig then
+        return false
+    end
+
+    return DestroyOnDeathConfig.Enabled == true
+        and DestroyOnDeathConfig.DestroyAshBodyItems == true
+end
+
+local function IsDestroyImmune(item)
+    if not item or item == "" then return true end
+    if DestroyOnDeathConfig and type(DestroyOnDeathConfig.IsItemImmune) == "function" then
+        local ok, immune = pcall(DestroyOnDeathConfig.IsItemImmune, item)
+        if ok and immune == true then
+            return true
+        end
+    end
+    return false
+end
+
+local function RecordDestroyedItem(target, item)
+    if DD and DD.DestructionLog and type(DD.DestructionLog.Record) == "function" then
+        pcall(DD.DestructionLog.Record, target, item, nil, "AshBody")
+    end
+end
+
 
 -- Destroy every equipped item on the target (used for ash-body deaths).
 local function DestroyAllEquippedItems(target)
@@ -57,7 +83,8 @@ local function DestroyAllEquippedItems(target)
     local okList, equippedList = pcall(function() return Osi.GetEquippedItems(target) end)
     if okList and equippedList then
         for _, item in pairs(equippedList) do
-            if item and item ~= "" and item ~= "NULL_00000000-0000-0000-0000-000000000000" then
+            if item and item ~= "" and item ~= "NULL_00000000-0000-0000-0000-000000000000" and not IsDestroyImmune(item) then
+                RecordDestroyedItem(target, item)
                 local okDestroy = pcall(function() Osi.DestroyItem(item, 1) end)
                 if not okDestroy then
                     pcall(function() Osi.RequestDelete(item) end)
@@ -82,7 +109,8 @@ local function DestroyAllEquippedItems(target)
     for _, slot in ipairs(slots) do
         local item = nil
         pcall(function() item = Osi.GetEquippedItem(target, slot) end)
-        if item and item ~= "" and item ~= "NULL_00000000-0000-0000-0000-000000000000" then
+        if item and item ~= "" and item ~= "NULL_00000000-0000-0000-0000-000000000000" and not IsDestroyImmune(item) then
+            RecordDestroyedItem(target, item)
             local okDestroy = pcall(function() Osi.DestroyItem(item, 1) end)
             if not okDestroy then
                 pcall(function() Osi.RequestDelete(item) end)
@@ -104,8 +132,15 @@ local function ApplyHidden(target, reason)
         return
     end
 
-    -- NEW: ash-body deaths destroy all equipped items when the hidden block is applied
-    DestroyAllEquippedItems(target)
+    if ShouldDestroyAshBodyItems() then
+        DestroyAllEquippedItems(target)
+    else
+        Ext.Utils.Print(string.format(
+            "%s HiddenDeath: item destruction skipped by config on %s",
+            MOD_PREFIX,
+            tostring(target)
+        ))
+    end
 
     Ext.Utils.Print(string.format("%s APPLY %s -> %s (%s)", MOD_PREFIX, HIDDEN_BLOCK, tostring(target), tostring(reason)))
     pcall(function()

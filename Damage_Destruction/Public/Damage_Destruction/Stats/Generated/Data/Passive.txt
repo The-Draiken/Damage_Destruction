@@ -1,0 +1,5 @@
+new entry "DD_EmptySlotsInitiative"
+type "PassiveData"
+data "BoostContext" "OnEquip;OnCreate"
+data "BoostConditions" "Player(context.Source) or Tagged('HUMANOID', context.Source);"
+data "Boosts" "IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 7)):Initiative(7);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 6)):Initiative(6);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 5)):Initiative(5);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 4)):Initiative(4);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 3)):Initiative(3);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 2)):Initiative(2);IF(ConditionResult(DD_EmptySlotsInitiativeBonus() == 1)):Initiative(1);"

@@ -11,3 +11,10 @@ Ext.Require("Client/ImmuneItemConfigMenu.lua")
 -- constructed.  This will register net listeners for the server
 -- broadcast and request the index on session load.
 Ext.Require("Client/ItemIndex_Client.lua")
+-- "Dead Party Members" MCM tab: lets the player send a dead-but-still-in-
+-- party member to camp or remove them from the party (leaving the body),
+-- mirroring Withers' own dismiss behaviour without waiting for him.
+Ext.Require("Client/DeadPartyMembersMenu.lua")
+-- "Avatar Switching" MCM tab: promote a living companion to Avatar while
+-- Tav is dead, and hand control back to Tav once revived.
+Ext.Require("Client/AvatarSwitchMenu.lua")

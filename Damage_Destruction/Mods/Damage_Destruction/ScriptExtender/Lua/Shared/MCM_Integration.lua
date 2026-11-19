@@ -25,6 +25,16 @@ local ALL_SETTING_IDS = {
     "stacking_enabled",
     "ignore_legendaries",
     "ignore_adamantine",
+    "destroy_ash_body_items",
+    "disintegrate_save_breaks_item",
+    "elemental_permadeath_mode",
+    "elemental_permadeath_overkill_threshold",
+    "empty_slots_initiative_enabled",
+    "equipment_failure_on_hit_chance",
+    "equipment_failure_on_crit_chance",
+    "equipment_failure_downed_chance",
+    "equipment_failure_dexterity_dc",
+    "equipment_failure_condition_roll_advantage",
     -- Per‑damage‑type modes (what happens on lethal damage)
     "damage_mode__Acid",
     "damage_mode__Fire",
@@ -169,6 +179,9 @@ local function SyncAllSettingsFromMCM()
     if DestroyOnDeathConfig.SaveToGlobal then
         DestroyOnDeathConfig.SaveToGlobal()
     end
+    if DD and DD.EmptySlotsInitiative and type(DD.EmptySlotsInitiative.RefreshAll) == "function" then
+        DD.EmptySlotsInitiative.RefreshAll()
+    end
 end
 
 -- Apply a single setting change from MCM.  This is used when the user
@@ -221,6 +234,9 @@ local function ApplySingleSetting(payload)
     end
     if DestroyOnDeathConfig.SaveToGlobal then
         DestroyOnDeathConfig.SaveToGlobal()
+    end
+    if DD and DD.EmptySlotsInitiative and type(DD.EmptySlotsInitiative.RefreshAll) == "function" then
+        DD.EmptySlotsInitiative.RefreshAll()
     end
 end
 

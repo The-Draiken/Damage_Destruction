@@ -2,15 +2,19 @@
 -- CFG_FALLBACK_INIT: if shared config failed to load for any reason, create safe defaults
 if DestroyOnDeathConfig == nil then
     DestroyOnDeathConfig = {
-        Enabled = true,
-        AffectScope = "all",
-        StackingEnabled = true,
+        Enabled = false,
+        AffectScope = "party",
+        StackingEnabled = false,
         IgnoreLegendaries = true,
         IgnoreAdamantine = true,
+        DestroyAshBodyItems = false,
+        DisintegrateSaveBreaksItem = false,
+        ElementalPermadeathMode = "none",
+        ElementalPermadeathOverkillThreshold = 10,
         DamageRules = {
-            Acid={mode="all", step=10}, Fire={mode="all", step=10}, Cold={mode="all", step=10}, Lightning={mode="all", step=10},
-            Radiant={mode="all", step=10}, Necrotic={mode="all", step=10},
-            Bludgeoning={mode="random", step=10, chunking=false, chunkThreshold=30}, Force={mode="random", step=10, chunking=false, chunkThreshold=30}, Thunder={mode="random", step=10, chunking=false, chunkThreshold=30},
+            Acid={mode="none", step=0, chunking=false, chunkThreshold=30}, Fire={mode="none", step=0, chunking=false, chunkThreshold=30}, Cold={mode="none", step=0, chunking=false, chunkThreshold=30}, Lightning={mode="none", step=0, chunking=false, chunkThreshold=30},
+            Radiant={mode="none", step=0, chunking=false, chunkThreshold=30}, Necrotic={mode="none", step=0, chunking=false, chunkThreshold=30},
+            Bludgeoning={mode="none", step=0, chunking=false, chunkThreshold=30}, Force={mode="none", step=0, chunking=false, chunkThreshold=30}, Thunder={mode="none", step=0, chunking=false, chunkThreshold=30},
         },
         _ImmuneStats = {},
         IsItemImmune = function(_) return false end
@@ -24,6 +28,22 @@ end
 
 local LastHit = {}
 local PendingHPBefore = {}
+local ELEMENTAL_PERMADEATH_TYPES = {
+    Fire = true,
+    Acid = true,
+    Lightning = true,
+    Cold = true,
+    Radiant = true,
+    Necrotic = true,
+}
+
+local function _DD_ClearDamageContext(charGuid)
+    if charGuid == nil or charGuid == "" then
+        return
+    end
+    LastHit[charGuid] = nil
+    PendingHPBefore[charGuid] = nil
+end
 
 -- Forward declarations for helpers used by early listeners/functions.
 -- Without these, early calls resolve to globals and crash before the later local
@@ -72,7 +92,7 @@ local function _DD_EnsureOverkillExploder(char, src)
     -- Duration -1.0 denotes permanent in Baldur's Gate 3
     pcall(function()
         Osi.ApplyStatus(char, "Overkill_Exploder", -1.0, 1)
-        DPrint(("Applied Overkill_Exploder to %s via %s"):format(tostring(char), tostring(src)))
+        if DEBUG then DPrint(("Applied Overkill_Exploder to %s via %s"):format(tostring(char), tostring(src))) end
     end)
 end
 
@@ -108,7 +128,7 @@ local function _DD_TryRemoveOverkillExploder(defender, damageType, damageAmount,
     if causeStr:find("Target_Multiattack_Dragon_Skeletal") then
         local ok, has = pcall(function() return Osi.HasActiveStatus(defender, "Overkill_Exploder") end)
         if ok and has == 1 then
-            DPrint(("Overkill_Exploder: Removing due to Target_Multiattack_Dragon_Skeletal on %s"):format(tostring(defender)))
+            if DEBUG then DPrint(("Overkill_Exploder: Removing due to Target_Multiattack_Dragon_Skeletal on %s"):format(tostring(defender))) end
             pcall(function() Osi.RemoveStatus(defender, "Overkill_Exploder") end)
         end
         return
@@ -117,7 +137,7 @@ local function _DD_TryRemoveOverkillExploder(defender, damageType, damageAmount,
        causeStr:find("Projectile_Disintegrate_8") or
        causeStr:find("Projectile_Disintegrate_7") or
        causeStr:find("Projectile_Disintegrate") then
-        DPrint(("Overkill_Exploder: Not removed due to disintegrate projectile on %s"):format(tostring(defender)))
+        if DEBUG then DPrint(("Overkill_Exploder: Not removed due to disintegrate projectile on %s"):format(tostring(defender))) end
         return
     end
 
@@ -133,19 +153,19 @@ local function _DD_TryRemoveOverkillExploder(defender, damageType, damageAmount,
     local lethal = (hpB <= 0 and dmg > 0) or (hpB > 0 and dmg >= hpB)
 
     if not chunking then
-        DPrint(("Overkill_Exploder: not removed on %s because chunking is disabled for %s"):format(tostring(defender), tostring(dmgType)))
+        if DEBUG then DPrint(("Overkill_Exploder: not removed on %s because chunking is disabled for %s"):format(tostring(defender), tostring(dmgType))) end
         return
     end
     if threshold <= 0 then
-        DPrint(("Overkill_Exploder: not removed on %s because chunk threshold is invalid for %s (threshold=%s)"):format(tostring(defender), tostring(dmgType), tostring(threshold)))
+        if DEBUG then DPrint(("Overkill_Exploder: not removed on %s because chunk threshold is invalid for %s (threshold=%s)"):format(tostring(defender), tostring(dmgType), tostring(threshold))) end
         return
     end
     if not lethal then
-        DPrint(("Overkill_Exploder: not removed on %s because hit was not lethal (type=%s amount=%s hpBefore=%s threshold=%s)"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(hpB), tostring(threshold)))
+        if DEBUG then DPrint(("Overkill_Exploder: not removed on %s because hit was not lethal (type=%s amount=%s hpBefore=%s threshold=%s)"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(hpB), tostring(threshold))) end
         return
     end
     if dmg < threshold then
-        DPrint(("Overkill_Exploder: not removed on %s because lethal %s damage %s is below chunk threshold %s"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(threshold)))
+        if DEBUG then DPrint(("Overkill_Exploder: not removed on %s because lethal %s damage %s is below chunk threshold %s"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(threshold))) end
         return
     end
 
@@ -165,7 +185,7 @@ local function _DD_TryRemoveOverkillExploder(defender, damageType, damageAmount,
     end
 
     if isPartyLike then
-        DPrint(("Overkill_Exploder: party target %s met chunk threshold for %s, waiting for actual Died before removal"):format(tostring(defender), tostring(dmgType)))
+        if DEBUG then DPrint(("Overkill_Exploder: party target %s met chunk threshold for %s, waiting for actual Died before removal"):format(tostring(defender), tostring(dmgType))) end
         return
     end
 
@@ -174,13 +194,26 @@ local function _DD_TryRemoveOverkillExploder(defender, damageType, damageAmount,
         pcall(function() Osi.ApplyStatus(defender, "Overkill_Exploder", -1.0, 1) end)
     end
 
-    DPrint(("Overkill_Exploder: removing on %s due to lethal %s damage amount=%s threshold=%s"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(threshold)))
+    if DEBUG then DPrint(("Overkill_Exploder: removing on %s due to lethal %s damage amount=%s threshold=%s"):format(tostring(defender), tostring(dmgType), tostring(dmg), tostring(threshold))) end
     pcall(function() Osi.RemoveStatus(defender, "Overkill_Exploder") end)
 end
 
-local DEBUG = true
+-- Verbose per-hit tracing. This used to be hardcoded to `true`, which meant every
+-- AttackedBy/Died event in the game (not just this mod's own party) built and wrote
+-- a formatted debug line to the Script Extender log. That's the single biggest
+-- performance cost this mod was imposing on busy combat, and because Osiris runs
+-- every mod's listeners for an event synchronously, it also delayed every other
+-- Script Extender mod hooked to the same events. Leave this false for normal play;
+-- flip it to true only when you're actively debugging.
+local DEBUG = false
 DPrint = function(msg)
     if DEBUG then Ext.Utils.Print("[Damage_Destruction] " .. msg) end
+end
+
+local function RecordDestroyedItem(charGuid, item, damageType, cause)
+    if DD and DD.DestructionLog and type(DD.DestructionLog.Record) == "function" then
+        pcall(DD.DestructionLog.Record, charGuid, item, damageType, cause or "Death")
+    end
 end
 
 
@@ -216,8 +249,8 @@ local function _DD_TryApplyExplodingDeath(defender, damageType, damageAmount, hp
     local lethal = (hpB <= 0 and dmg > 0) or (hpB > 0 and dmg >= hpB)
     local overkill = lethal and math.max(0, dmg - hpB) or 0
     if lethal and _DD_IsExplodeType(damageType) and step > 0 and overkill >= (step * 3) then
-        DPrint(("Exploding_Death: pre-death apply on %s (type=%s amount=%s hpBefore=%s overkill=%s step=%s cause=%s)")
-            :format(tostring(defender), tostring(damageType), tostring(dmg), tostring(hpB), tostring(overkill), tostring(step), tostring(damageCause)))
+        if DEBUG then DPrint(("Exploding_Death: pre-death apply on %s (type=%s amount=%s hpBefore=%s overkill=%s step=%s cause=%s)")
+            :format(tostring(defender), tostring(damageType), tostring(dmg), tostring(hpB), tostring(overkill), tostring(step), tostring(damageCause))) end
         Osi.ApplyStatus(defender, "Exploding_Death", 0.2, 1)
     end
 end
@@ -287,7 +320,7 @@ local function IsAffectedCharacter(charGuid)
     if not isChar then
         return false
     end
-    if not DestroyOnDeathConfig then return true end
+    if not DestroyOnDeathConfig then return false end
 
     -- Normalize scope defensively (if anything other than exact "party", treat as all)
     local scope = tostring(DestroyOnDeathConfig.AffectScope or "party"):lower()
@@ -325,7 +358,22 @@ local function IsAffectedCharacter(charGuid)
     return ok2 and res2 or false
 end
 
-local function CollectEquippedItems(charGuid)
+-- Returns { {item=guid, slot=slotName}, ... }.
+local function CollectEquippedItems(charGuid, damageType)
+    if type(damageType) == "string" and damageType ~= "" then
+        local helper = DD and DD.EquipmentFailure and DD.EquipmentFailure.BuildDestructibleEquippedItems
+        if type(helper) == "function" then
+            local ok, filtered = pcall(helper, charGuid, damageType)
+            if ok and type(filtered) == "table" then
+                return filtered
+            end
+            if DEBUG then DPrint(("CollectEquippedItems: damage filter failed for %s; destroying nothing for safety"):format(tostring(damageType))) end
+            return {}
+        end
+        if DEBUG then DPrint(("CollectEquippedItems: damage filter unavailable for %s; destroying nothing for safety"):format(tostring(damageType))) end
+        return {}
+    end
+
     local items = {}
     local seen = {}
     for _, slot in ipairs(EQUIP_SLOTS) do
@@ -333,25 +381,50 @@ local function CollectEquippedItems(charGuid)
         if item and item ~= "" and not seen[item] then
             seen[item] = true
             if not DestroyOnDeathConfig.IsItemImmune(item) then
-                table.insert(items, item)
+                table.insert(items, { item = item, slot = slot })
             end
         end
     end
     return items
 end
 
-local function DestroyEquippedItems(charGuid, countToDestroy)
-    local items = CollectEquippedItems(charGuid)
+-- Direct call into ImmersiveNudity_SE_Patch, when it's loaded, so it can
+-- instantly strip the corresponding baked visual slot. Safe to call
+-- whether or not that mod is installed.
+local function NotifyNudityPatch(charGuid, slot)
+    if IMNSEP and IMNSEP.OnItemDestroyed then
+        pcall(IMNSEP.OnItemDestroyed, charGuid, slot)
+    end
+end
+
+-- Tells ImmersiveNudity_SE_Patch a destruction-worthy death happened even
+-- though no item was destroyed, so a character who burned wearing nothing
+-- is still stripped of their baked visual clothing. The patch only strips
+-- slots with no real item equipped. Safe if the mod isn't installed.
+local function NotifyNudityPatchNoItems(charGuid)
+    if IMNSEP and IMNSEP.OnDestructionTriggered then
+        pcall(IMNSEP.OnDestructionTriggered, charGuid)
+    end
+end
+
+local function DestroyEquippedItems(charGuid, countToDestroy, damageType)
+    local items = CollectEquippedItems(charGuid, damageType)
     local total = #items
-    DPrint(("DestroyEquippedItems: equipped=%d count=%d"):format(total, countToDestroy))
-    if total == 0 or countToDestroy == 0 then return end
+    if DEBUG then DPrint(("DestroyEquippedItems: destructible=%d count=%d damageType=%s"):format(total, countToDestroy, tostring(damageType))) end
+    if countToDestroy == 0 then return end
+    if total == 0 then
+        NotifyNudityPatchNoItems(charGuid)
+        return
+    end
 
     pcall(function() Osi.PlayEffect(charGuid, VFX_DESTROY, "", 1.0) end)
 
     if countToDestroy < 0 or countToDestroy >= total then
-        for _, item in ipairs(items) do
-            Osi.Unequip(charGuid, item)
-            Osi.RequestDelete(item)
+        for _, entry in ipairs(items) do
+            RecordDestroyedItem(charGuid, entry.item, damageType, "Death")
+            Osi.Unequip(charGuid, entry.item)
+            Osi.RequestDelete(entry.item)
+            NotifyNudityPatch(charGuid, entry.slot)
         end
         return
     end
@@ -359,9 +432,11 @@ local function DestroyEquippedItems(charGuid, countToDestroy)
     for _=1, math.min(countToDestroy, total) do
         if #items == 0 then break end
         local idx = Ext.Utils.Random(1, #items)
-        local guid = items[idx]
-        Osi.Unequip(charGuid, guid)
-        Osi.RequestDelete(guid)
+        local entry = items[idx]
+        RecordDestroyedItem(charGuid, entry.item, damageType, "Death")
+        Osi.Unequip(charGuid, entry.item)
+        Osi.RequestDelete(entry.item)
+        NotifyNudityPatch(charGuid, entry.slot)
         table.remove(items, idx)
     end
 end
@@ -378,7 +453,7 @@ end
 -- immune, nothing happens.
 --
 -- @param charGuid (guid) The character whose breast slot item should be destroyed.
-local function DestroyBreastItem(charGuid)
+local function DestroyBreastItem(charGuid, damageType)
     -- Validate input and ensure we have a character.
     if not charGuid or Osi.IsCharacter(charGuid) ~= 1 then return end
     -- Fetch whatever is currently equipped in the Breast slot.  The slot name
@@ -393,13 +468,26 @@ local function DestroyBreastItem(charGuid)
             return
         end
     end
+    if type(damageType) == "string" and damageType ~= "" then
+        local helper = DD and DD.EquipmentFailure and DD.EquipmentFailure.CanDestroyItemWithDamage
+        if type(helper) == "function" then
+            local ok, canDestroy = pcall(helper, charGuid, item, "Breast", damageType)
+            if not ok or canDestroy ~= true then
+                return
+            end
+        else
+            return
+        end
+    end
     -- Play the same destruction VFX used for random destruction.
     pcall(function()
         Osi.PlayEffect(charGuid, VFX_DESTROY, "", 1.0)
     end)
     -- Unequip and permanently remove the item.
+    RecordDestroyedItem(charGuid, item, damageType, "Death")
     Osi.Unequip(charGuid, item)
     Osi.RequestDelete(item)
+    NotifyNudityPatch(charGuid, "Breast")
 end
 
 local function ComputeItemsToDestroy(charGuid)
@@ -433,8 +521,8 @@ local function ComputeItemsToDestroy(charGuid)
     local stackingEnabled = rule.stacking
     if stackingEnabled == nil then stackingEnabled = cfg.StackingEnabled end
 
-    DPrint(("ComputeItemsToDestroy: raw=%s norm=%s mode=%s overkill=%s step=%s stacking=%s")
-        :format(tostring(hit.damageType), tostring(dmgType), tostring(mode), tostring(overkill), tostring(step), tostring(stackingEnabled)))
+    if DEBUG then DPrint(("ComputeItemsToDestroy: raw=%s norm=%s mode=%s overkill=%s step=%s stacking=%s")
+        :format(tostring(hit.damageType), tostring(dmgType), tostring(mode), tostring(overkill), tostring(step), tostring(stackingEnabled))) end
 
     -- Mode "none": explicitly disable item destruction for this damage type.
     if mode == "none" then return 0 end
@@ -474,6 +562,45 @@ local function ComputeItemsToDestroy(charGuid)
     return math.max(1, tiers)
 end
 
+local function _DD_GetElementalPermadeathDecision(hit)
+    if type(hit) ~= "table" then
+        return false, "missing_hit", nil, 0, 0, "none", 0
+    end
+
+    local dmgType = NormalizeDamageType(hit.damageType)
+    local amount = tonumber(hit.amount) or 0
+    local overkill = tonumber(hit.overkill) or 0
+    local cfg = DestroyOnDeathConfig or {}
+    local mode = tostring(cfg.ElementalPermadeathMode or "death"):lower()
+    local threshold = tonumber(cfg.ElementalPermadeathOverkillThreshold) or 10
+    if threshold < 1 then threshold = 1 end
+
+    if not ELEMENTAL_PERMADEATH_TYPES[dmgType] then
+        return false, "damage_type", dmgType, amount, overkill, mode, threshold
+    end
+
+    if amount <= 0 then
+        return false, "non_positive_damage", dmgType, amount, overkill, mode, threshold
+    end
+
+    if mode == "none" then
+        return false, "mode_none", dmgType, amount, overkill, mode, threshold
+    end
+
+    if mode == "death" then
+        return true, "mode_death", dmgType, amount, overkill, mode, threshold
+    end
+
+    if mode == "overkill" then
+        if overkill >= threshold then
+            return true, "mode_overkill", dmgType, amount, overkill, mode, threshold
+        end
+        return false, "overkill_below_threshold", dmgType, amount, overkill, mode, threshold
+    end
+
+    return false, "unknown_mode", dmgType, amount, overkill, mode, threshold
+end
+
 Ext.Osiris.RegisterListener("AttackedBy", 7, "before", function(defender, attackerOwner, attacker, _, _, _, _)
     if Osi.IsCharacter(defender) == 1 then
         PendingHPBefore[defender] = Osi.GetHitpoints(defender) or 0
@@ -504,13 +631,13 @@ Ext.Osiris.RegisterListener("AttackedBy", 7, "after", function(defender, _, _, d
     -- Legacy support: still attempt to apply Exploding_Death status for backward
     -- compatibility with older mods that might rely on the status itself.
     _DD_TryApplyExplodingDeath(defender, damageType, damageAmount, hpBefore, damageCause)
-    DPrint(("AttackedBy: def=%s dmgType=%s amount=%s cause=%s hpBefore=%s overkill=%s")
-        :format(tostring(defender), tostring(damageType), tostring(damageAmount), tostring(damageCause), tostring(hpBefore), tostring(overkill)))
+    if DEBUG then DPrint(("AttackedBy: def=%s dmgType=%s amount=%s cause=%s hpBefore=%s overkill=%s")
+        :format(tostring(defender), tostring(damageType), tostring(damageAmount), tostring(damageCause), tostring(hpBefore), tostring(overkill))) end
 end)
 
 Ext.Osiris.RegisterListener("Died", 1, "after", function(char)
-    DPrint("Died: " .. tostring(char))
-    DPrint(("CFGDBG Scope=%s BludgeoningStep=%s BludgeoningChunking=%s BludgeoningChunkThreshold=%s ForceStep=%s ForceChunking=%s ForceChunkThreshold=%s ThunderStep=%s ThunderChunking=%s ThunderChunkThreshold=%s")
+    if DEBUG then DPrint("Died: " .. tostring(char)) end
+    if DEBUG then DPrint(("CFGDBG Scope=%s BludgeoningStep=%s BludgeoningChunking=%s BludgeoningChunkThreshold=%s ForceStep=%s ForceChunking=%s ForceChunkThreshold=%s ThunderStep=%s ThunderChunking=%s ThunderChunkThreshold=%s")
         :format(
             tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.AffectScope),
             tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.DamageRules and DestroyOnDeathConfig.DamageRules.Bludgeoning and DestroyOnDeathConfig.DamageRules.Bludgeoning.step),
@@ -522,15 +649,16 @@ Ext.Osiris.RegisterListener("Died", 1, "after", function(char)
             tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.DamageRules and DestroyOnDeathConfig.DamageRules.Thunder and DestroyOnDeathConfig.DamageRules.Thunder.step),
             tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.DamageRules and DestroyOnDeathConfig.DamageRules.Thunder and DestroyOnDeathConfig.DamageRules.Thunder.chunking),
             tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.DamageRules and DestroyOnDeathConfig.DamageRules.Thunder and DestroyOnDeathConfig.DamageRules.Thunder.chunkThreshold)
-        ))
-    DPrint("SCOPE=" .. tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.AffectScope) .. " IsPlayer=" .. tostring(Osi.IsPlayer(char)) .. " IsCharacter=" .. tostring(Osi.IsCharacter(char)))
+        )) end
+    if DEBUG then DPrint("SCOPE=" .. tostring(DestroyOnDeathConfig and DestroyOnDeathConfig.AffectScope) .. " IsPlayer=" .. tostring(Osi.IsPlayer(char)) .. " IsCharacter=" .. tostring(Osi.IsCharacter(char))) end
     if not IsAffectedCharacter(char) then
-        DPrint("Died: not in scope")
+        if DEBUG then DPrint("Died: not in scope") end
+        _DD_ClearDamageContext(char)
         return
     end
     local removeExploder, chunkType, chunkAmount, chunkThreshold = _DD_ShouldRemoveExploderOnActualDeath(char)
     if removeExploder then
-        DPrint(("Overkill_Exploder: actual-death removal on %s type=%s amount=%s threshold=%s"):format(tostring(char), tostring(chunkType), tostring(chunkAmount), tostring(chunkThreshold)))
+        if DEBUG then DPrint(("Overkill_Exploder: actual-death removal on %s type=%s amount=%s threshold=%s"):format(tostring(char), tostring(chunkType), tostring(chunkAmount), tostring(chunkThreshold))) end
         pcall(function() Osi.RemoveStatus(char, "Overkill_Exploder") end)
     end
 
@@ -539,18 +667,25 @@ Ext.Osiris.RegisterListener("Died", 1, "after", function(char)
     -- Damage_Destruction to determine the damage type that dealt the final blow.
     local hit = LastHit[char]
     if hit then
-        local dmgType = NormalizeDamageType(hit.damageType)
-        -- If the normalized damage type is one of our destructive elements
-        -- then permanently block Raise Dead by applying the terminal status.
-        if dmgType == "Fire" or dmgType == "Acid" or dmgType == "Lightning" or dmgType == "Cold" or dmgType == "Radiant" or dmgType == "Necrotic" then
-            -- Only apply if not already applied; using ApplyStatus will stack if we don't remove duplicates,
-            -- but since this status is non-stackable and uses a unique StackId, it will not duplicate.
+        local shouldApply, reason, dmgType, amount, overkill, mode, threshold = _DD_GetElementalPermadeathDecision(hit)
+        if shouldApply then
             Osi.ApplyStatus(char, "DD_DEATH_BLOCKS_RAISE_DEAD_4", -1, 1)
+            pcall(function() Osi.RemoveStatus(char, "DEAD_ONE_MINUTE") end)
+            pcall(function() Osi.RemoveStatus(char, "DEAD_TECHNICAL") end)
+            pcall(function() Osi.RemoveStatus(char, "DEAD_COMBAT_BLOCK") end)
+            if DEBUG then DPrint(("Elemental permadeath applied: char=%s type=%s amount=%s overkill=%s mode=%s threshold=%s")
+                :format(tostring(char), tostring(dmgType), tostring(amount), tostring(overkill), tostring(mode), tostring(threshold))) end
+        else
+            if DEBUG then DPrint(("Elemental permadeath skipped: char=%s reason=%s type=%s amount=%s overkill=%s mode=%s threshold=%s")
+                :format(tostring(char), tostring(reason), tostring(dmgType), tostring(amount), tostring(overkill), tostring(mode), tostring(threshold))) end
         end
     end
     -- Continue with item destruction logic
     local count = ComputeItemsToDestroy(char)
-    if count == 0 then return end
+    if count == 0 then
+        _DD_ClearDamageContext(char)
+        return
+    end
     -- For slashing damage overkill in random mode, only destroy the Breast slot rather
     -- than selecting a random equipped item.  This ensures that slashing death
     -- always targets chest armor when it meets the configured overkill step.  If the
@@ -574,20 +709,25 @@ Ext.Osiris.RegisterListener("Died", 1, "after", function(char)
                     -- Only destroy the Breast slot item once when the random logic
                     -- would have destroyed at least one item.  Additional tiers are
                     -- ignored for slashing: the Breast item is the sole target.
-                    DestroyBreastItem(char)
+                    DestroyBreastItem(char, dmgType)
+                    _DD_ClearDamageContext(char)
                     return
                 end
             end
         end
     end
-    DestroyEquippedItems(char, count)
+    local deathDamageType = nil
+    if LastHit[char] then
+        deathDamageType = NormalizeDamageType(LastHit[char].damageType)
+    end
+    DestroyEquippedItems(char, count, deathDamageType)
 
     -- Clear the hit record for this character now that item destruction (if any)
     -- has been resolved.  Without this, stale hit data could incorrectly cause
     -- destruction on subsequent deaths triggered by other means (e.g. scripted
     -- deaths without an AttackedBy event).  Clearing here ensures that
     -- ComputeItemsToDestroy returns zero until a fresh hit record is recorded.
-    LastHit[char] = nil
+    _DD_ClearDamageContext(char)
 end)
 
 -- === Overkill_Exploder application events ===
@@ -604,6 +744,7 @@ pcall(function()
         _DD_EnsureOverkillExploder(char, "CharacterJoinedParty")
     end)
     Ext.Osiris.RegisterListener("Resurrected", 1, "after", function(char)
+        _DD_ClearDamageContext(char)
         _DD_EnsureOverkillExploder(char, "Resurrected")
     end)
     -- Dynamically created characters (summons, spawns)
@@ -660,4 +801,3 @@ pcall(function()
     Ext.Osiris.RegisterListener("AttackedBy", 9, "before", function(defender, a,b,c,d,e,f,g,h) _DD_AttackedByBefore(defender, a, b) end)
     Ext.Osiris.RegisterListener("AttackedBy", 9, "after", function(defender, a,b,damageType, damageAmount, damageCause, f,g,h) _DD_AttackedByAfter(defender, damageType, damageAmount, damageCause) end)
 end)
-

@@ -33,7 +33,7 @@
 										<node id="Attributes">
 											<attribute id="Animation" type="FixedString" value="" />
 											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
-											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Target_RaiseDead&quot;)" />
 											<attribute id="Consume" type="bool" value="True" />
 											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead" />
 										</node>
@@ -72,7 +72,7 @@
 										<node id="Attributes">
 											<attribute id="Animation" type="FixedString" value="" />
 											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
-											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Target_RaiseDead_6&quot;)" />
 											<attribute id="Consume" type="bool" value="True" />
 											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_6" />
 										</node>
@@ -111,7 +111,7 @@
 										<node id="Attributes">
 											<attribute id="Animation" type="FixedString" value="" />
 											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
-											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Target_RaiseDead_7&quot;)" />
 											<attribute id="Consume" type="bool" value="True" />
 											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_7" />
 										</node>
@@ -150,7 +150,7 @@
 										<node id="Attributes">
 											<attribute id="Animation" type="FixedString" value="" />
 											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
-											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Target_RaiseDead_8&quot;)" />
 											<attribute id="Consume" type="bool" value="True" />
 											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_8" />
 										</node>
@@ -189,7 +189,7 @@
 										<node id="Attributes">
 											<attribute id="Animation" type="FixedString" value="" />
 											<attribute id="ClassId" type="guid" value="a865965f-501b-46e9-9eaa-7748e8c04d09" />
-											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Teleportation_Revivify_Scroll&quot;)" />
+											<attribute id="Conditions" type="LSString" value="CanUseSpellScroll(&quot;Target_RaiseDead_9&quot;)" />
 											<attribute id="Consume" type="bool" value="True" />
 											<attribute id="SkillID" type="FixedString" value="Target_RaiseDead_9" />
 										</node>

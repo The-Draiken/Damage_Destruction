@@ -1,0 +1,28 @@
+function DD_EmptySlotsInitiativeBonus(entity)
+    local entity = entity or context.Source
+
+    local meleeMainHand = GetItemInEquipmentSlot(EquipmentSlot.MeleeMainHand, entity).IsValid
+    local rangedMainHand = GetItemInEquipmentSlot(EquipmentSlot.RangedMainHand, entity).IsValid
+    local meleeOffHand = GetItemInEquipmentSlot(EquipmentSlot.MeleeOffHand, entity).IsValid
+    local rangedOffHand = GetItemInEquipmentSlot(EquipmentSlot.RangedOffHand, entity).IsValid
+    local helmet = GetItemInEquipmentSlot(EquipmentSlot.Helmet, entity).IsValid
+    local breast = GetItemInEquipmentSlot(EquipmentSlot.Breast, entity).IsValid
+    local cloak = GetItemInEquipmentSlot(EquipmentSlot.Cloak, entity).IsValid
+
+    local hasBigMelee = IsWeaponOfProficiencyGroup('Greatclubs|Glaives|Greataxes|Greatswords|Halberds|Mauls|Pikes', GetItemInEquipmentSlot(EquipmentSlot.MeleeMainHand, entity))
+    local hasBow = IsWeaponOfProficiencyGroup('LightCrossbows|Shortbows|HeavyCrossbows|Longbows', GetItemInEquipmentSlot(EquipmentSlot.RangedMainHand, entity))
+
+    local count = 0
+
+    if not meleeMainHand then count = count + 1 end
+    if not rangedMainHand then count = count + 1 end
+    if not meleeOffHand then count = count + 1 end
+    if not rangedOffHand then count = count + 1 end
+    if hasBigMelee.Result then count = count - 1 end
+    if hasBow.Result then count = count - 1 end
+    if not helmet then count = count + 1 end
+    if not breast then count = count + 1 end
+    if not cloak then count = count + 1 end
+
+    return count
+end
