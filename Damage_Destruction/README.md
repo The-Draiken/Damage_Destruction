@@ -10,7 +10,6 @@ Damage Destruction includes everything in [Raise The Dead](../Raise_The_Dead) (t
 
 - [BG3 Script Extender](https://github.com/Norbyte/bg3se)
 - [Mod Configuration Menu (MCM)](https://www.nexusmods.com/baldursgate3/mods/9162). Needed for the settings and the in-game tabs.
-- `meta.lsx` also lists **5eSpells** and **ImmersiveNudity (IN_SlavesAndPrisonersMechanics)** as dependencies.
 
 **Don't install Raise The Dead alongside this mod.** Damage Destruction already contains its revival fixes (`RTD_Improved.lua`), and running both applies them twice.
 
