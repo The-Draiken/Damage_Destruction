@@ -120,3 +120,7 @@ These are the same fixes as Raise The Dead. See [NPCs accounted for](#npcs-accou
 ## Credits
 - Author: A Human
 - Baelen fix originally datamined by NexusMods user **whyslyy**.
+
+##Questions
+You can ask me questions at [https://rpghq.org/forums/viewtopic.php?t=6788-skynet](https://rpghq.org/forums/viewtopic.php?p=433651-damage-destruction-8-0-baldur-s-gate-3) directly. (I advise you to not go through the forum itself as people there are unhinged)
+
